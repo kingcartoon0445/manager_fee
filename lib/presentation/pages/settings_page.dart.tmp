@@ -1,0 +1,42 @@
+  Widget _buildTypeButton(String label, int type) {
+    final isSelected = _recurringType == type;
+    // Chi tiêu (type 1) = Red, Thu nhập (type 0) = Green
+    final selectedColor =
+        type == 1 ? AppColors.errorRed : AppColors.successGreen;
+    final unselectedColor = Colors.grey[300]!;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _recurringType = type;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedColor : unselectedColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              type == 1
+                  ? Icons.remove_circle_outline
+                  : Icons.add_circle_outline,
+              color: isSelected ? Colors.white : Colors.grey[600],
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }

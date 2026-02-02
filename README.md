@@ -1,11 +1,16 @@
-<div align="center">
+# peadget
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+A new Flutter project.
 
-  <h1>Built with AI Studio</h2>
+## Getting Started
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+This project is a starting point for a Flutter application.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+A few resources to get you started if this is your first Flutter project:
 
-</div>
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

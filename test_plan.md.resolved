@@ -1,0 +1,35 @@
+# Kế Hoạch Kiểm Thử Thủ Công - App Quản Lý Chi Tiêu
+
+Tài liệu này phác thảo các trường hợp kiểm thử (test cases) để xác minh chức năng cốt lõi của ứng dụng và các thay đổi gần đây.
+
+## 1. Trang Chủ & Tổng Quan (Dashboard & Overview)
+| ID | Trường Hợp Kiểm Thử | Các Bước | Kết Quả Mong Đợi |
+|----|---------------------|----------|------------------|
+| 1.1 | **Khởi Động Ứng Dụng** | Mở ứng dụng. | Ứng dụng tải trang chủ mà không bị crash. Hiển thị số dư và các thống kê. |
+| 1.2 | **Điều Hướng Ngày Tháng** | Nhấn vào biểu tượng `<` và `>` bên cạnh Tháng/Năm trên tiêu đề. | Tháng hiển thị thay đổi. Dữ liệu giao dịch được làm mới theo tháng đã chọn. |
+| 1.3 | **Quay Về Hôm Nay** | Chuyển đến một tháng trong quá khứ/tương lai, sau đó quan sát chữ "HÔM NAY". | Ngày tháng hiển thị đúng ngày hiện tại của hệ thống. |
+| 1.4 | **Xem Tổng Kết Tạm Thời** | **[MỚI]** Nhấn vào dòng chữ "HÔM NAY" (hoặc ngày tháng) trên tiêu đề. | **Hộp thoại Tổng kết tháng (Monthly Report Dialog)** xuất hiện hiển thị Thu nhập, Chi tiêu, và Tiết kiệm của tháng *hiện tại*. |
+
+## 2. Giao Dịch (Transactions)
+| ID | Trường Hợp Kiểm Thử | Các Bước | Kết Quả Mong Đợi |
+|----|---------------------|----------|------------------|
+| 2.1 | **Thêm Chi Tiêu** | 1. Nhấn nút nổi (+).<br>2. Chọn tab "Chi tiêu".<br>3. Nhập số tiền (VD: 50.000).<br>4. Chọn danh mục.<br>5. Nhấn Lưu. | "Tổng Chi" tăng thêm 50.000. Giao dịch xuất hiện trong danh sách bên dưới. |
+| 2.2 | **Thêm Thu Nhập** | 1. Nhấn nút nổi (+).<br>2. Chọn tab "Thu nhập".<br>3. Nhập số tiền.<br>4. Nhấn Lưu. | "Tổng Thu" tăng lên. "Tổng tiền" được cập nhật. |
+| 2.3 | **Danh Sách Hàng Ngày** | Thêm nhiều giao dịch cho ngày hôm nay. | Kiểm tra danh sách "Chi tiêu hôm nay" hiển thị chúng theo thứ tự thời gian (mới nhất lên đầu). |
+
+## 3. Thao Tác Nhanh (Quick Actions)
+| ID | Trường Hợp Kiểm Thử | Các Bước | Kết Quả Mong Đợi |
+|----|---------------------|----------|------------------|
+| 3.1 | **Đi Chợ Nhanh** | 1. Tìm banner "Đi Chợ Hôm Nay?".<br>2. Nhấn "Nhập ngay". | Modal "Đi Chợ Nhanh" (Quick Shopping) mở ra. |
+| 3.2 | **Bố Cục Banner** | **[MỚI]** Quan sát thẻ "Đi Chợ Hôm Nay?". | Thẻ nên trải rộng toàn bộ chiều ngang (trừ lề) và trông cân đối. Thẻ "Tổng Kết Tạm Thời" **KHÔNG** được xuất hiện trong banner. |
+
+## 4. Thông Báo (Kỹ Thuật)
+| ID | Trường Hợp Kiểm Thử | Các Bước | Kết Quả Mong Đợi |
+|----|---------------------|----------|------------------|
+| 4.1 | **Khởi Động Lại App** | Tắt hẳn ứng dụng và mở lại. | Không có crash liên quan đến [NotificationService](file:///Users/leduy/Documents/peadget/lib/core/services/notification_service.dart#6-90) (Kiểm chứng việc sửa lỗi `UILocalNotificationDateInterpretation`). |
+
+## 5. Kiểm Tra Hồi Quy Giao Diện (UI/UX Regression)
+| ID | Trường Hợp Kiểm Thử | Các Bước | Kết Quả Mong Đợi |
+|----|-------------------|----------|------------------|
+| 5.1 | **Hành Vi Cuộn** | Cuộn trang chủ lên và xuống. | Header và các thẻ cuộn mượt mà. Hiệu ứng banner chạy khi tải trang. |
+| 5.2 | **Tab Bên Dưới** | Nhấn các tab khác (Cài đặt, Ngân sách...). | Các trang tương ứng tải đúng nội dung. |
