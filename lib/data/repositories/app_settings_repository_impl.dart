@@ -23,6 +23,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       initialBalance: model.initialBalance,
       lastClosedMonth: model.lastClosedMonth,
       geminiApiKey: model.geminiApiKey,
+      geminiModelId: model.geminiModelId,
     );
   }
 
@@ -35,7 +36,8 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       ..onboardingCompletedAt = settings.onboardingCompletedAt
       ..initialBalance = settings.initialBalance
       ..lastClosedMonth = settings.lastClosedMonth
-      ..geminiApiKey = settings.geminiApiKey;
+      ..geminiApiKey = settings.geminiApiKey
+      ..geminiModelId = settings.geminiModelId;
 
     await isar.writeTxn(() async {
       await isar.appSettingsModels.put(model);

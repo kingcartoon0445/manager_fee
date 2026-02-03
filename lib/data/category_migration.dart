@@ -13,146 +13,136 @@ class CategoryMigration {
   Future<void> seedCategoriesIfNeeded() async {
     final isar = await isarService.db;
 
-    // Check if categories already exist
-    // Check if categories already exist
-    final existingCount = await isar.categoryModels.count();
-
-    if (existingCount > 0) {
-      // Check if "Chợ" category exists (for existing users)
-      final marketCategory =
-          await isar.categoryModels.filter().nameEqualTo('Chợ').findFirst();
-
-      if (marketCategory == null) {
-        print('📋 Adding missing "Chợ" category...');
-        final newCategory = CategoryModel()
-          ..name = 'Chợ'
-          ..type = TransactionType.expense
-          ..icon = '🏪'
-          ..parentId = null;
-
-        await isar.writeTxn(() async {
-          await isar.categoryModels.put(newCategory);
-        });
-        print('✅ Added "Chợ" category.');
-      } else {
-        print('📋 Categories exist. Skipping migration.');
-      }
-      return;
-    }
-
-    print('🏷️ Migrating categories...');
-
-    final categories = <CategoryModel>[
-      // SPECIAL CATEGORY FOR INITIAL BALANCE
+    // Define all desired categories
+    final desiredCategories = <CategoryModel>[
+      // SPECIAL
       CategoryModel()
         ..name = 'Số dư đầu kỳ'
         ..type = TransactionType.income
-        ..icon = '💵'
-        ..parentId = null,
+        ..icon = '💵',
 
-      // EXPENSE CATEGORIES (type = 1)
+      // EXPENSE CATEGORIES
       CategoryModel()
         ..name = 'Ăn uống'
         ..type = TransactionType.expense
-        ..icon = '🍜'
-        ..parentId = null,
-
+        ..icon = '🍜',
       CategoryModel()
         ..name = 'Di chuyển'
         ..type = TransactionType.expense
-        ..icon = '🚗'
-        ..parentId = null,
-
+        ..icon = '🚗',
       CategoryModel()
         ..name = 'Giải trí'
         ..type = TransactionType.expense
-        ..icon = '🎮'
-        ..parentId = null,
-
+        ..icon = '🎮',
       CategoryModel()
         ..name = 'Sức khỏe'
         ..type = TransactionType.expense
-        ..icon = '🏥'
-        ..parentId = null,
-
+        ..icon = '🏥',
       CategoryModel()
         ..name = 'Mua sắm'
         ..type = TransactionType.expense
-        ..icon = '🛍️'
-        ..parentId = null,
-
+        ..icon = '🛍️',
       CategoryModel()
         ..name = 'Phim ảnh'
         ..type = TransactionType.expense
-        ..icon = '🎬'
-        ..parentId = null,
-
+        ..icon = '🎬',
       CategoryModel()
         ..name = 'Giáo dục'
         ..type = TransactionType.expense
-        ..icon = '📚'
-        ..parentId = null,
-
+        ..icon = '📚',
       CategoryModel()
         ..name = 'Hóa đơn'
         ..type = TransactionType.expense
-        ..icon = '💡'
-        ..parentId = null,
-
+        ..icon = '💡',
       CategoryModel()
         ..name = 'Nhà cửa'
         ..type = TransactionType.expense
-        ..icon = '🏠'
-        ..parentId = null,
-
+        ..icon = '🏠',
       CategoryModel()
         ..name = 'Quà tặng'
         ..type = TransactionType.expense
-        ..icon = '🎁'
-        ..parentId = null,
-
+        ..icon = '🎁',
       CategoryModel()
         ..name = 'Du lịch'
         ..type = TransactionType.expense
-        ..icon = '✈️'
-        ..parentId = null,
-
+        ..icon = '✈️',
       CategoryModel()
         ..name = 'Chợ'
         ..type = TransactionType.expense
-        ..icon = '🏪'
-        ..parentId = null,
+        ..icon = '🏪',
 
-      // INCOME CATEGORIES (type = 0)
+      // NEW FAMILY CATEGORIES
+      CategoryModel()
+        ..name = 'Con cái'
+        ..type = TransactionType.expense
+        ..icon = '👶',
+      CategoryModel()
+        ..name = 'Hiếu hỉ'
+        ..type = TransactionType.expense
+        ..icon = '💌',
+      CategoryModel()
+        ..name = 'Điện nước'
+        ..type = TransactionType.expense
+        ..icon = '⚡',
+      CategoryModel()
+        ..name = 'Bảo hiểm'
+        ..type = TransactionType.expense
+        ..icon = '🛡️',
+      CategoryModel()
+        ..name = 'Sửa chữa'
+        ..type = TransactionType.expense
+        ..icon = '🔧',
+      CategoryModel()
+        ..name = 'Làm đẹp'
+        ..type = TransactionType.expense
+        ..icon = '💄',
+      CategoryModel()
+        ..name = 'Thú cưng'
+        ..type = TransactionType.expense
+        ..icon = '🐶',
+
+      // INCOME CATEGORIES
       CategoryModel()
         ..name = 'Thưởng'
         ..type = TransactionType.income
-        ..icon = '🎉'
-        ..parentId = null,
-
+        ..icon = '🎉',
       CategoryModel()
         ..name = 'Đầu tư'
         ..type = TransactionType.income
-        ..icon = '📈'
-        ..parentId = null,
-
+        ..icon = '📈',
       CategoryModel()
         ..name = 'Freelance'
         ..type = TransactionType.income
-        ..icon = '💼'
-        ..parentId = null,
-
+        ..icon = '💼',
       CategoryModel()
         ..name = 'Lương'
         ..type = TransactionType.income
-        ..icon = '💰'
-        ..parentId = null,
+        ..icon = '💰',
     ];
 
-    await isar.writeTxn(() async {
-      await isar.categoryModels.putAll(categories);
-    });
+    final existingCategories = await isar.categoryModels.where().findAll();
+    final categoriesToAdd = <CategoryModel>[];
 
-    print('✅ Migrated ${categories.length} categories successfully!');
+    for (var desired in desiredCategories) {
+      // Check if exists by name (case-insensitive for safety)
+      final exists = existingCategories.any((e) =>
+          e.name.toLowerCase() == desired.name.toLowerCase() &&
+          e.type == desired.type);
+
+      if (!exists) {
+        categoriesToAdd.add(desired);
+      }
+    }
+
+    if (categoriesToAdd.isNotEmpty) {
+      print(
+          '🏷️ Migrating: Adding ${categoriesToAdd.length} new categories...');
+      await isar.writeTxn(() async {
+        await isar.categoryModels.putAll(categoriesToAdd);
+      });
+      print('✅ Added: ${categoriesToAdd.map((e) => e.name).join(", ")}');
+    } else {
+      print('📋 all categories exist. Skipping migration.');
+    }
   }
 }

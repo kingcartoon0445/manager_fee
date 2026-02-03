@@ -21,14 +21,13 @@ import '../blocs/budget/budget_state.dart';
 import '../blocs/recurring_transaction/recurring_transaction_bloc.dart';
 import '../blocs/recurring_transaction/recurring_transaction_event.dart';
 import '../blocs/recurring_transaction/recurring_transaction_state.dart';
-import '../blocs/theme/theme_cubit.dart';
-import '../blocs/theme/theme_state.dart';
-import '../widgets/theme_picker_dialog.dart';
+
 import '../../core/thousand_separator_formatter.dart';
 import '../../core/app_colors.dart';
 import '../../core/category_icons.dart';
 import '../../data/services/data_export_service.dart';
 import '../../data/services/data_import_service.dart';
+import '../../data/services/ai_service.dart';
 import '../../data/datasources/isar_service.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -45,6 +44,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   final _initialBalanceController = TextEditingController();
   final _geminiApiKeyController = TextEditingController();
+  List<Map<String, String>> _availableModels = [];
+  String? _selectedModelId;
+  bool _isLoadingModels = false;
 
   // Input Controllers for Recurring
   final _recurringNameController = TextEditingController();
@@ -73,6 +75,42 @@ class _SettingsPageState extends State<SettingsPage> {
     final settings = await appSettingsRepo.getAppSettings();
     if (settings?.geminiApiKey != null) {
       _geminiApiKeyController.text = settings!.geminiApiKey!;
+      _selectedModelId = settings.geminiModelId ?? 'gemini-1.5-flash';
+      // Auto fetch models if key exists
+      _fetchModels(settings.geminiApiKey!);
+    }
+  }
+
+  Future<void> _fetchModels(String apiKey) async {
+    if (apiKey.isEmpty) return;
+
+    setState(() {
+      _isLoadingModels = true;
+    });
+
+    try {
+      final models = await AiService.getAvailableModels(apiKey);
+      setState(() {
+        _availableModels = models;
+        // If selected model is not in list, default to first or keep it?
+        // Keep it if possible, otherwise mapped.
+        if (_availableModels.isNotEmpty &&
+            !_availableModels.any((m) => m['id'] == _selectedModelId)) {
+          _selectedModelId = _availableModels.first['id'];
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi tải danh sách models: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingModels = false;
+        });
+      }
     }
   }
 
@@ -92,6 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
         initialBalance: settings.initialBalance,
         lastClosedMonth: settings.lastClosedMonth,
         geminiApiKey: _geminiApiKeyController.text.trim(),
+        geminiModelId: _selectedModelId,
       );
 
       await appSettingsRepo.saveAppSettings(newSettings);
@@ -279,6 +318,58 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       obscureText: true,
                     ),
+                    const SizedBox(height: 12),
+                    if (_geminiApiKeyController.text.isNotEmpty)
+                      const SizedBox.shrink(),
+                    // Row(
+                    //   children: [
+                    //     Expanded(
+                    //       child: _isLoadingModels
+                    //           ? const Center(
+                    //               child: SizedBox(
+                    //                   height: 20,
+                    //                   width: 20,
+                    //                   child: CircularProgressIndicator(
+                    //                       strokeWidth: 2)))
+                    //           : DropdownButtonFormField<String>(
+                    //               value: _selectedModelId,
+                    //               decoration: InputDecoration(
+                    //                 labelText: 'Chọn Model AI',
+                    //                 border: OutlineInputBorder(
+                    //                   borderRadius: BorderRadius.circular(12),
+                    //                 ),
+                    //                 contentPadding:
+                    //                     const EdgeInsets.symmetric(
+                    //                         horizontal: 12, vertical: 12),
+                    //               ),
+                    //               items: _availableModels.map((m) {
+                    //                 return DropdownMenuItem(
+                    //                   value: m['id'],
+                    //                   child: Text(
+                    //                     m['name'] ?? m['id']!,
+                    //                     overflow: TextOverflow.ellipsis,
+                    //                     style: const TextStyle(fontSize: 13),
+                    //                   ),
+                    //                 );
+                    //               }).toList(),
+                    //               onChanged: _availableModels.isEmpty
+                    //                   ? null
+                    //                   : (val) {
+                    //                       setState(() {
+                    //                         _selectedModelId = val;
+                    //                       });
+                    //                     },
+                    //             ),
+                    //     ),
+                    //     const SizedBox(width: 8),
+                    //     IconButton(
+                    //       icon: const Icon(Icons.refresh),
+                    //       tooltip: 'Tải lại danh sách Model',
+                    //       onPressed: () => _fetchModels(
+                    //           _geminiApiKeyController.text.trim()),
+                    //     )
+                    //   ],
+                    // ),
                     const SizedBox(height: 8),
                     InkWell(
                       onTap: () {

@@ -22,23 +22,28 @@ const AppSettingsModelSchema = CollectionSchema(
       name: r'geminiApiKey',
       type: IsarType.string,
     ),
-    r'hasCompletedOnboarding': PropertySchema(
+    r'geminiModelId': PropertySchema(
       id: 1,
+      name: r'geminiModelId',
+      type: IsarType.string,
+    ),
+    r'hasCompletedOnboarding': PropertySchema(
+      id: 2,
       name: r'hasCompletedOnboarding',
       type: IsarType.bool,
     ),
     r'initialBalance': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'initialBalance',
       type: IsarType.double,
     ),
     r'lastClosedMonth': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'lastClosedMonth',
       type: IsarType.dateTime,
     ),
     r'onboardingCompletedAt': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'onboardingCompletedAt',
       type: IsarType.dateTime,
     )
@@ -69,6 +74,12 @@ int _appSettingsModelEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final value = object.geminiModelId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   return bytesCount;
 }
 
@@ -79,10 +90,11 @@ void _appSettingsModelSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.geminiApiKey);
-  writer.writeBool(offsets[1], object.hasCompletedOnboarding);
-  writer.writeDouble(offsets[2], object.initialBalance);
-  writer.writeDateTime(offsets[3], object.lastClosedMonth);
-  writer.writeDateTime(offsets[4], object.onboardingCompletedAt);
+  writer.writeString(offsets[1], object.geminiModelId);
+  writer.writeBool(offsets[2], object.hasCompletedOnboarding);
+  writer.writeDouble(offsets[3], object.initialBalance);
+  writer.writeDateTime(offsets[4], object.lastClosedMonth);
+  writer.writeDateTime(offsets[5], object.onboardingCompletedAt);
 }
 
 AppSettingsModel _appSettingsModelDeserialize(
@@ -93,11 +105,12 @@ AppSettingsModel _appSettingsModelDeserialize(
 ) {
   final object = AppSettingsModel();
   object.geminiApiKey = reader.readStringOrNull(offsets[0]);
-  object.hasCompletedOnboarding = reader.readBool(offsets[1]);
+  object.geminiModelId = reader.readStringOrNull(offsets[1]);
+  object.hasCompletedOnboarding = reader.readBool(offsets[2]);
   object.id = id;
-  object.initialBalance = reader.readDoubleOrNull(offsets[2]);
-  object.lastClosedMonth = reader.readDateTimeOrNull(offsets[3]);
-  object.onboardingCompletedAt = reader.readDateTimeOrNull(offsets[4]);
+  object.initialBalance = reader.readDoubleOrNull(offsets[3]);
+  object.lastClosedMonth = reader.readDateTimeOrNull(offsets[4]);
+  object.onboardingCompletedAt = reader.readDateTimeOrNull(offsets[5]);
   return object;
 }
 
@@ -111,12 +124,14 @@ P _appSettingsModelDeserializeProp<P>(
     case 0:
       return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 4:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 5:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -366,6 +381,160 @@ extension AppSettingsModelQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'geminiApiKey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'geminiModelId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'geminiModelId',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'geminiModelId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'geminiModelId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'geminiModelId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'geminiModelId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      geminiModelIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'geminiModelId',
         value: '',
       ));
     });
@@ -693,6 +862,20 @@ extension AppSettingsModelQuerySortBy
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      sortByGeminiModelId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'geminiModelId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      sortByGeminiModelIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'geminiModelId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
       sortByHasCompletedOnboarding() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasCompletedOnboarding', Sort.asc);
@@ -762,6 +945,20 @@ extension AppSettingsModelQuerySortThenBy
       thenByGeminiApiKeyDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'geminiApiKey', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      thenByGeminiModelId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'geminiModelId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      thenByGeminiModelIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'geminiModelId', Sort.desc);
     });
   }
 
@@ -845,6 +1042,14 @@ extension AppSettingsModelQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QDistinct>
+      distinctByGeminiModelId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'geminiModelId',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QDistinct>
       distinctByHasCompletedOnboarding() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'hasCompletedOnboarding');
@@ -885,6 +1090,13 @@ extension AppSettingsModelQueryProperty
       geminiApiKeyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'geminiApiKey');
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, String?, QQueryOperations>
+      geminiModelIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'geminiModelId');
     });
   }
 

@@ -5,6 +5,7 @@ class AppSettings {
   final double? initialBalance;
   final DateTime? lastClosedMonth;
   final String? geminiApiKey;
+  final String? geminiModelId;
 
   AppSettings({
     required this.id,
@@ -13,5 +14,6 @@ class AppSettings {
     this.initialBalance,
     this.lastClosedMonth,
     this.geminiApiKey,
+    this.geminiModelId,
   });
 }

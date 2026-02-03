@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/services/ai_service.dart';
+import '../../../domain/entities/transaction.dart' as entity;
+import '../../../domain/usecases/add_transaction_usecase.dart';
+import '../../../domain/usecases/get_categories_usecase.dart';
+import '../blocs/transaction/transaction_bloc.dart';
+import '../blocs/transaction/transaction_event.dart';
 
 import '../../../domain/repositories/app_settings_repository.dart';
 import '../../../injection_container.dart' as di;
@@ -24,9 +30,10 @@ class _AiInputModalState extends State<AiInputModal>
   bool _isLoading = false;
   String? _error;
   String? _apiKey;
+  String? _modelId;
 
   // Analysis Result State
-  Map<String, dynamic>? _analysisResult;
+  List<Map<String, dynamic>>? _analysisResults;
 
   @override
   void initState() {
@@ -40,6 +47,7 @@ class _AiInputModalState extends State<AiInputModal>
     final settings = await settingsRepo.getAppSettings();
     setState(() {
       _apiKey = settings?.geminiApiKey;
+      _modelId = settings?.geminiModelId ?? 'gemini-2.5-flash';
     });
   }
 
@@ -55,19 +63,21 @@ class _AiInputModalState extends State<AiInputModal>
       _showError('Vui lòng nhập API Key trong Cài đặt trước.');
       return;
     }
+    FocusScope.of(context).unfocus(); // Dismiss keyboard
     if (_textController.text.trim().isEmpty) return;
 
     setState(() {
       _isLoading = true;
       _error = null;
-      _analysisResult = null;
+      _analysisResults = null;
     });
 
     try {
-      final aiService = AiService(apiKey: _apiKey!);
-      final result =
+      final aiService =
+          AiService(apiKey: _apiKey!, modelId: _modelId ?? 'gemini-1.5-flash');
+      final results =
           await aiService.extractTransactionFromText(_textController.text);
-      _handleAiResult(result);
+      _handleAiResult(results);
     } catch (e) {
       debugPrint('AI Error: $e'); // Log error to console
       setState(() {
@@ -91,12 +101,14 @@ class _AiInputModalState extends State<AiInputModal>
       setState(() {
         _isLoading = true;
         _error = null;
-        _analysisResult = null;
+        _analysisResults = null;
       });
 
-      final aiService = AiService(apiKey: _apiKey!);
+      final aiService =
+          AiService(apiKey: _apiKey!, modelId: _modelId ?? 'gemini-1.5-flash');
       final result = await aiService.extractTransactionFromReceipt(image);
-      _handleAiResult(result);
+      // Wrap single receipt result in a list for consistency
+      _handleAiResult([result]);
     } catch (e) {
       debugPrint('AI Error: $e'); // Log error to console
       setState(() {
@@ -107,15 +119,9 @@ class _AiInputModalState extends State<AiInputModal>
     }
   }
 
-  void _handleAiResult(Map<String, dynamic> result) {
-    // Map AI category string to local Category
-
-    // This is simple mapping. Real app might match by name similarity
-    // Or we leave it empty for user to select.
-
-    // For now, let's just confirm displaying.
+  void _handleAiResult(List<Map<String, dynamic>> results) {
     setState(() {
-      _analysisResult = result;
+      _analysisResults = results;
     });
   }
 
@@ -125,12 +131,13 @@ class _AiInputModalState extends State<AiInputModal>
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _confirmTransaction() {
-    if (_analysisResult == null) return;
+  void _confirmTransaction(int index) {
+    if (_analysisResults == null || index >= _analysisResults!.length) return;
 
-    final amount = (_analysisResult!['amount'] as num?)?.toDouble() ?? 0;
-    final note = _analysisResult!['note'] as String? ?? '';
-    final dateStr = _analysisResult!['date'] as String?;
+    final transaction = _analysisResults![index];
+    final amount = (transaction['amount'] as num?)?.toDouble() ?? 0;
+    final note = transaction['note'] as String? ?? '';
+    final dateStr = transaction['date'] as String?;
     final date = dateStr != null ? DateTime.tryParse(dateStr) : DateTime.now();
 
     Navigator.pop(context); // Close AI Modal
@@ -143,9 +150,105 @@ class _AiInputModalState extends State<AiInputModal>
         initialAmount: amount,
         initialNote: note,
         initialDate: date,
-        // We could pass categoryId if we successfully mapped it
       ),
     );
+  }
+
+  void _createAllTransactions() async {
+    if (_analysisResults == null || _analysisResults!.isEmpty) return;
+
+    // Show confirmation
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tạo tất cả giao dịch?'),
+        content: Text(
+          'Bạn có muốn tạo ${_analysisResults!.length} giao dịch này không?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Tạo tất cả',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Get the use cases directly from dependency injection
+    final addTransactionUseCase = di.sl<AddTransactionUseCase>();
+    final getCategoriesUseCase = di.sl<GetCategoriesUseCase>();
+
+    // Create all transactions directly without triggering events
+    try {
+      // Fetch categories once for mapping
+      final categories = await getCategoriesUseCase();
+      final expenseCategories = categories.where((c) => c.type == 1).toList();
+
+      for (var result in _analysisResults!) {
+        final amount = (result['amount'] as num?)?.toDouble() ?? 0;
+        final note = result['note'] as String? ?? '';
+        final dateStr = result['date'] as String?;
+        final categoryTypeStr = result['category_type'] as String? ?? '';
+        final date =
+            dateStr != null ? DateTime.tryParse(dateStr) : DateTime.now();
+
+        // Map AI category_type to actual categoryId
+        int categoryId = 1; // Default fallback
+        if (categoryTypeStr.isNotEmpty && expenseCategories.isNotEmpty) {
+          // Try to find matching category by name (case-insensitive)
+          final matchedCategory = expenseCategories.firstWhere(
+            (c) =>
+                c.name.toLowerCase().contains(categoryTypeStr.toLowerCase()) ||
+                categoryTypeStr.toLowerCase().contains(c.name.toLowerCase()),
+            orElse: () => expenseCategories.first,
+          );
+          categoryId = matchedCategory.id ?? 1;
+        }
+
+        // Create transaction with mapped category
+        final transaction = entity.Transaction(
+          amount: amount,
+          type: 1, // Default to expense
+          categoryId: categoryId,
+          date: date ?? DateTime.now(),
+          note: note,
+          tags: [],
+          budgetId: null,
+        );
+
+        // Call use case directly to save transaction
+        await addTransactionUseCase(transaction);
+      }
+
+      if (mounted) {
+        // Now reload transactions once after all are saved
+        context.read<TransactionBloc>().add(LoadTransactions());
+
+        Navigator.pop(context); // Close modal
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã tạo ${_analysisResults!.length} giao dịch'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi tạo giao dịch: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -206,48 +309,54 @@ class _AiInputModalState extends State<AiInputModal>
                   // Text Input Tab
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _textController,
-                          maxLines: 3,
-                          decoration: InputDecoration(
-                            hintText: 'Ví dụ: Ăn sáng 30k, Xăng 50k...',
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            filled: true,
-                            fillColor: const Color(0xFFF8F9FD),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _processText,
-                            icon: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2))
-                                : const Icon(Icons.send),
-                            label: Text(
-                                _isLoading ? 'Đang phân tích...' : 'Phân tích'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryBlue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _textController,
+                            maxLines: 3,
+                            decoration: InputDecoration(
+                              hintText: 'Ví dụ: Ăn sáng 30k, Xăng 50k...',
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF8F9FD),
                             ),
                           ),
-                        ),
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: Text(_error!,
-                                style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : _processText,
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2))
+                                  : const Icon(Icons.send),
+                              label: Text(_isLoading
+                                  ? 'Đang phân tích...'
+                                  : 'Phân tích'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryBlue,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
                           ),
-                        if (_analysisResult != null) _buildResultCard(),
-                      ],
+                          if (_error != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: Text(_error!,
+                                  style: const TextStyle(color: Colors.red)),
+                            ),
+                          if (_analysisResults != null &&
+                              _analysisResults!.isNotEmpty)
+                            _buildResultCards(),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -286,10 +395,11 @@ class _AiInputModalState extends State<AiInputModal>
                             child: Text(_error!,
                                 style: const TextStyle(color: Colors.red)),
                           ),
-                        if (_analysisResult != null)
+                        if (_analysisResults != null &&
+                            _analysisResults!.isNotEmpty)
                           Expanded(
                               child: SingleChildScrollView(
-                                  child: _buildResultCard())),
+                                  child: _buildResultCards())),
                       ],
                     ),
                   ),
@@ -333,69 +443,131 @@ class _AiInputModalState extends State<AiInputModal>
     );
   }
 
-  Widget _buildResultCard() {
-    if (_analysisResult == null) return const SizedBox.shrink();
+  Widget _buildResultCards() {
+    if (_analysisResults == null || _analysisResults!.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    final amount = (_analysisResult!['amount'] as num?)?.toDouble() ?? 0;
-    final note = _analysisResult!['note'] ?? '';
-    final category = _analysisResult!['category_type'] ?? 'Unknown';
-
-    return Container(
-      margin: const EdgeInsets.only(top: 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Kết quả phân tích:",
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-          const SizedBox(height: 12),
-          Row(
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 16, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.monetization_on, color: Colors.green, size: 20),
-              Text(CurrencyFormatter.format(amount),
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.note, color: Colors.grey, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                  child: Text(note.toString(),
-                      style: const TextStyle(fontSize: 16))),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.category, color: Colors.grey, size: 20),
-              const SizedBox(width: 8),
-              Text("Gợi ý: $category",
-                  style: const TextStyle(color: Colors.grey)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _confirmTransaction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
+              Text(
+                'Tìm thấy ${_analysisResults!.length} giao dịch:',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
-              child: const Text("Tạo giao dịch này"),
+              if (_analysisResults!.length > 1)
+                ElevatedButton.icon(
+                  onPressed: _createAllTransactions,
+                  icon: const Icon(Icons.add_circle, size: 18),
+                  label: const Text('Tạo nhanh tất cả'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        ...List.generate(_analysisResults!.length, (index) {
+          final transaction = _analysisResults![index];
+          final amount = (transaction['amount'] as num?)?.toDouble() ?? 0;
+          final note = transaction['note'] ?? '';
+          final category = transaction['category_type'] ?? 'Unknown';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green[50],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.green[200]!),
             ),
-          )
-        ],
-      ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '#${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.monetization_on,
+                        color: Colors.green, size: 20),
+                    const SizedBox(width: 4),
+                    Text(
+                      CurrencyFormatter.format(amount),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.note, color: Colors.grey, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        note.toString(),
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.category, color: Colors.grey, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      category,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => _confirmTransaction(index),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('Tạo giao dịch này'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 }

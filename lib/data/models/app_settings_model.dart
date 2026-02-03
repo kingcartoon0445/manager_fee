@@ -15,4 +15,6 @@ class AppSettingsModel {
   double? initialBalance;
 
   String? geminiApiKey;
+
+  String? geminiModelId;
 }
