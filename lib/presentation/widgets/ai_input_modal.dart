@@ -156,144 +156,148 @@ class _AiInputModalState extends State<AiInputModal>
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        children: [
-          // Drag Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          children: [
+            // Drag Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'AI Assistant ✨',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                if (_apiKey == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   const Text(
-                    'Chưa có API Key',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
+                    'AI Assistant ✨',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
+                  if (_apiKey == null)
+                    const Text(
+                      'Chưa có API Key',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+            TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primaryBlue,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(text: 'Nhập câu', icon: Icon(Icons.keyboard)),
+                Tab(text: 'Quét hóa đơn', icon: Icon(Icons.document_scanner)),
               ],
             ),
-          ),
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primaryBlue,
-            unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(text: 'Nhập câu', icon: Icon(Icons.keyboard)),
-              Tab(text: 'Quét hóa đơn', icon: Icon(Icons.document_scanner)),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Text Input Tab
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _textController,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Ví dụ: Ăn sáng 30k, Xăng 50k...',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          filled: true,
-                          fillColor: const Color(0xFFF8F9FD),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _isLoading ? null : _processText,
-                          icon: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.send),
-                          label: Text(
-                              _isLoading ? 'Đang phân tích...' : 'Phân tích'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Text Input Tab
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _textController,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: 'Ví dụ: Ăn sáng 30k, Xăng 50k...',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: const Color(0xFFF8F9FD),
                           ),
                         ),
-                      ),
-                      if (_error != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(_error!,
-                              style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _processText,
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2))
+                                : const Icon(Icons.send),
+                            label: Text(
+                                _isLoading ? 'Đang phân tích...' : 'Phân tích'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
                         ),
-                      if (_analysisResult != null) _buildResultCard(),
-                    ],
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Text(_error!,
+                                style: const TextStyle(color: Colors.red)),
+                          ),
+                        if (_analysisResult != null) _buildResultCard(),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Image Input Tab
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                          "Chụp hoặc chọn ảnh hóa đơn để AI tự điền thông tin",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildSquareButton(
-                              icon: Icons.camera_alt,
-                              label: "Chụp ảnh",
-                              onTap: () => _pickImage(ImageSource.camera)),
-                          _buildSquareButton(
-                              icon: Icons.photo_library,
-                              label: "Thư viện",
-                              onTap: () => _pickImage(ImageSource.gallery)),
-                        ],
-                      ),
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 32),
-                          child: CircularProgressIndicator(),
+                  // Image Input Tab
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                            "Chụp hoặc chọn ảnh hóa đơn để AI tự điền thông tin",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildSquareButton(
+                                icon: Icons.camera_alt,
+                                label: "Chụp ảnh",
+                                onTap: () => _pickImage(ImageSource.camera)),
+                            _buildSquareButton(
+                                icon: Icons.photo_library,
+                                label: "Thư viện",
+                                onTap: () => _pickImage(ImageSource.gallery)),
+                          ],
                         ),
-                      if (_error != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: Text(_error!,
-                              style: const TextStyle(color: Colors.red)),
-                        ),
-                      if (_analysisResult != null)
-                        Expanded(
-                            child: SingleChildScrollView(
-                                child: _buildResultCard())),
-                    ],
+                        if (_isLoading)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 32),
+                            child: CircularProgressIndicator(),
+                          ),
+                        if (_error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Text(_error!,
+                                style: const TextStyle(color: Colors.red)),
+                          ),
+                        if (_analysisResult != null)
+                          Expanded(
+                              child: SingleChildScrollView(
+                                  child: _buildResultCard())),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -555,7 +555,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                     // Category selector
                     DropdownButtonFormField<int>(
-                      initialValue: selectedCategoryId,
+                      value: selectedCategoryId,
                       decoration: InputDecoration(
                         hintText: 'Chọn danh mục',
                         border: OutlineInputBorder(
@@ -590,7 +590,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
                     // Day of month
                     DropdownButtonFormField<int>(
-                      initialValue: selectedDay,
+                      value: selectedDay,
                       decoration: InputDecoration(
                         hintText: 'Ngày trong tháng',
                         border: OutlineInputBorder(

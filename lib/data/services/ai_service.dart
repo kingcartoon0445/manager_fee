@@ -12,7 +12,7 @@ class AiService {
   Future<Map<String, dynamic>> extractTransactionFromText(String text) async {
     try {
       final model = GenerativeModel(
-        model: 'gemini-pro',
+        model: 'gemini-2.5-flash',
         apiKey: apiKey,
       );
 
@@ -74,7 +74,7 @@ class AiService {
     // Step 2: Ask Gemini to parse it
     try {
       final model = GenerativeModel(
-        model: 'gemini-pro',
+        model: 'gemini-2.5-flash',
         apiKey: apiKey,
       );
 
