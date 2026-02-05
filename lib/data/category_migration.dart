@@ -14,110 +14,89 @@ class CategoryMigration {
     final isar = await isarService.db;
 
     // Define all desired categories
+    // Define all desired categories
     final desiredCategories = <CategoryModel>[
-      // SPECIAL
-      CategoryModel()
-        ..name = 'Số dư đầu kỳ'
-        ..type = TransactionType.income
-        ..icon = '💵',
-
-      // EXPENSE CATEGORIES
-      CategoryModel()
-        ..name = 'Ăn uống'
-        ..type = TransactionType.expense
-        ..icon = '🍜',
-      CategoryModel()
-        ..name = 'Di chuyển'
-        ..type = TransactionType.expense
-        ..icon = '🚗',
-      CategoryModel()
-        ..name = 'Giải trí'
-        ..type = TransactionType.expense
-        ..icon = '🎮',
-      CategoryModel()
-        ..name = 'Sức khỏe'
-        ..type = TransactionType.expense
-        ..icon = '🏥',
-      CategoryModel()
-        ..name = 'Mua sắm'
-        ..type = TransactionType.expense
-        ..icon = '🛍️',
-      CategoryModel()
-        ..name = 'Phim ảnh'
-        ..type = TransactionType.expense
-        ..icon = '🎬',
-      CategoryModel()
-        ..name = 'Giáo dục'
-        ..type = TransactionType.expense
-        ..icon = '📚',
-      CategoryModel()
-        ..name = 'Hóa đơn'
-        ..type = TransactionType.expense
-        ..icon = '💡',
-      CategoryModel()
-        ..name = 'Nhà cửa'
-        ..type = TransactionType.expense
-        ..icon = '🏠',
-      CategoryModel()
-        ..name = 'Quà tặng'
-        ..type = TransactionType.expense
-        ..icon = '🎁',
-      CategoryModel()
-        ..name = 'Du lịch'
-        ..type = TransactionType.expense
-        ..icon = '✈️',
-      CategoryModel()
-        ..name = 'Chợ'
-        ..type = TransactionType.expense
-        ..icon = '🏪',
-
-      // NEW FAMILY CATEGORIES
-      CategoryModel()
-        ..name = 'Con cái'
-        ..type = TransactionType.expense
-        ..icon = '👶',
-      CategoryModel()
-        ..name = 'Hiếu hỉ'
-        ..type = TransactionType.expense
-        ..icon = '💌',
-      CategoryModel()
-        ..name = 'Điện nước'
-        ..type = TransactionType.expense
-        ..icon = '⚡',
-      CategoryModel()
-        ..name = 'Bảo hiểm'
-        ..type = TransactionType.expense
-        ..icon = '🛡️',
-      CategoryModel()
-        ..name = 'Sửa chữa'
-        ..type = TransactionType.expense
-        ..icon = '🔧',
-      CategoryModel()
-        ..name = 'Làm đẹp'
-        ..type = TransactionType.expense
-        ..icon = '💄',
-      CategoryModel()
-        ..name = 'Thú cưng'
-        ..type = TransactionType.expense
-        ..icon = '🐶',
-
-      // INCOME CATEGORIES
-      CategoryModel()
-        ..name = 'Thưởng'
-        ..type = TransactionType.income
-        ..icon = '🎉',
-      CategoryModel()
-        ..name = 'Đầu tư'
-        ..type = TransactionType.income
-        ..icon = '📈',
-      CategoryModel()
-        ..name = 'Freelance'
-        ..type = TransactionType.income
-        ..icon = '💼',
+      // --- INCOME (Giữ lại để đảm bảo chức năng) ---
       CategoryModel()
         ..name = 'Lương'
         ..type = TransactionType.income
-        ..icon = '💰',
+        ..icon = '💰', // Money Bag
+      CategoryModel()
+        ..name = 'Thưởng'
+        ..type = TransactionType.income
+        ..icon = '🎉', // Party Popper
+      CategoryModel()
+        ..name =
+            'Đầu tư' // User requested "Đầu tư", mapping to Income logically or could be Expense depending on context, usually Income for returns or Expense for putting money in. User list had "Đầu tư", let's put it in both or stick to standard. Let's make "Đầu tư" an Expense (outflow) as per user list context (expenses), but usually it's tracked as Transfer or Expense. Let's add it as Expense in the user list section below.
+        ..type = TransactionType.income
+        ..icon = '📈',
+      CategoryModel()
+        ..name = 'Khác' // Income Other
+        ..type = TransactionType.income
+        ..icon = '📦',
+
+      // --- EXPENSE (Theo danh sách User yêu cầu) ---
+      CategoryModel()
+        ..name = 'Nhà'
+        ..type = TransactionType.expense
+        ..icon = '🏠', // House
+      CategoryModel()
+        ..name = 'Điện nước'
+        ..type = TransactionType.expense
+        ..icon = '⚡', // High Voltage (more generic for power/utility)
+      CategoryModel()
+        ..name = 'Chợ'
+        ..type = TransactionType.expense
+        ..icon = '🥦', // Broccoli (Market/Food)
+      CategoryModel()
+        ..name = 'Xăng xe'
+        ..type = TransactionType.expense
+        ..icon = '⛽', // Fuel Pump
+      CategoryModel()
+        ..name = 'Sửa chữa'
+        ..type = TransactionType.expense
+        ..icon = '🔧', // Wrench
+      CategoryModel()
+        ..name = 'Giáo dục'
+        ..type = TransactionType.expense
+        ..icon = '📚', // Books
+      CategoryModel()
+        ..name = 'Điện thoại, 4G'
+        ..type = TransactionType.expense
+        ..icon = '📱', // Mobile Phone
+      CategoryModel()
+        ..name = 'Ăn ngoài, Cafe'
+        ..type = TransactionType.expense
+        ..icon = '☕', // Hot Beverage
+      CategoryModel()
+        ..name = 'Mua sắm'
+        ..type = TransactionType.expense
+        ..icon = '🛍️', // Shopping Bags
+      CategoryModel()
+        ..name = 'Giải trí'
+        ..type = TransactionType.expense
+        ..icon = '🎬', // Clapper Board (Movies/Entertainment)
+      CategoryModel()
+        ..name = 'Sức khỏe'
+        ..type = TransactionType.expense
+        ..icon = '💊', // Pill
+      CategoryModel()
+        ..name = 'Bảo hiểm'
+        ..type = TransactionType.expense
+        ..icon = '🛡️', // Shield
+      CategoryModel()
+        ..name = 'Đầu tư' // Also add as Expense for "Investment outflow"
+        ..type = TransactionType.expense
+        ..icon =
+            '📉', // Chart Decreasing (Money leaving) -> Or just Chart. Let's use generic Chart
+      CategoryModel()
+        ..name = 'Quà tặng'
+        ..type = TransactionType.expense
+        ..icon = '🎁', // Wrapped Gift
+      CategoryModel()
+        ..name = 'Khác'
+        ..type = TransactionType.expense
+        ..icon = '📦', // Package
     ];
 
     final existingCategories = await isar.categoryModels.where().findAll();

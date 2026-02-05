@@ -58,6 +58,11 @@ dependencies:
     google_mlkit_text_recognition: ^0.15.0
     image_picker: ^1.2.1
     url_launcher: ^6.3.2
+    speech_to_text: ^7.0.0
+    # flutter_siri_shortcuts: ^0.0.1 # Removed due to compatibility issues
+    quick_actions: ^1.1.0
+    flutter_animate: ^4.5.2
+    google_nav_bar: ^5.0.7
 
 dev_dependencies:
     flutter_test:

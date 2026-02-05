@@ -9,6 +9,7 @@ import '../../domain/entities/transaction.dart';
 import '../../domain/entities/category.dart';
 import '../../core/app_colors.dart';
 import '../../core/category_icons.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/utils/currency_formatter.dart';
 import 'surplus_history_page.dart';
 
@@ -22,6 +23,7 @@ class ReportsPage extends StatefulWidget {
 class _ReportsPageState extends State<ReportsPage> {
   ReportType _viewMode = ReportType.daily;
   DateTime selectedDate = DateTime.now(); // Default to today
+  int _transactionType = 1; // 0: Income, 1: Expense
 
   @override
   void initState() {
@@ -58,7 +60,8 @@ class _ReportsPageState extends State<ReportsPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor:
+            _transactionType == 1 ? AppColors.errorRed : AppColors.successGreen,
         title: const Text('Báo cáo thống kê',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -86,15 +89,23 @@ class _ReportsPageState extends State<ReportsPage> {
                 if (state is ReportLoading) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is ReportLoaded) {
-                  // Filter only expenses (type = 1)
-                  final expenses =
-                      state.transactions.where((t) => t.type == 1).toList();
+                  // Filter by selected type
+                  final filteredTransactions = state.transactions
+                      .where((t) => t.type == _transactionType)
+                      .toList();
 
-                  if (expenses.isEmpty) {
-                    return const Center(
-                        child: Text(
-                            "Không có dữ liệu chi tiêu trong khoảng thời gian này",
-                            style: TextStyle(color: Colors.grey)));
+                  if (filteredTransactions.isEmpty) {
+                    return Center(
+                        child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.hourglass_empty,
+                            size: 60, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        const Text("Chưa có dữ liệu",
+                            style: TextStyle(color: Colors.grey)),
+                      ],
+                    ));
                   }
 
                   return RefreshIndicator(
@@ -106,12 +117,14 @@ class _ReportsPageState extends State<ReportsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildSummaryCard(expenses),
+                            _buildSummaryCard(filteredTransactions),
                             const SizedBox(height: 24),
                             if (_viewMode == ReportType.daily)
-                              _buildDailyView(expenses, state.categories)
+                              _buildDailyView(
+                                  filteredTransactions, state.categories)
                             else
-                              _buildMonthlyView(expenses, state.categories),
+                              _buildMonthlyView(
+                                  filteredTransactions, state.categories),
                           ],
                         ),
                       ),
@@ -131,31 +144,44 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 25),
       decoration: BoxDecoration(
-        color: AppColors.primaryBlue,
+        color: _transactionType == 1
+            ? AppColors.errorRed
+            : AppColors.successGreen, // Dynamic Color
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: (_transactionType == 1
+                    ? AppColors.errorRed
+                    : AppColors.successGreen)
+                .withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 10),
+          )
+        ],
       ),
       child: Column(
         children: [
-          // View Mode Selector
+          // Income / Expense Toggle
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.black.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(25),
             ),
             child: Row(
               children: [
-                _buildModeButton("Theo ngày", ReportType.daily),
-                _buildModeButton("Theo tháng", ReportType.monthly),
+                _buildTypeToggle("Thu Nhập", 0),
+                _buildTypeToggle("Chi Tiêu", 1),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+
           // Date Selector
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -167,23 +193,36 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
               Column(
                 children: [
-                  Text(
-                    _viewMode == ReportType.daily
-                        ? _getWeekdayName(selectedDate)
-                        : "Tháng ${selectedDate.month}",
-                    style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500),
+                  // View Mode Chips
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildViewModeChip("Ngày", ReportType.daily),
+                      const SizedBox(width: 8),
+                      _buildViewModeChip("Tháng", ReportType.monthly),
+                    ],
                   ),
+                  const SizedBox(height: 8),
                   Text(
                     _viewMode == ReportType.daily
                         ? DateFormat('dd/MM/yyyy').format(selectedDate)
                         : DateFormat('MM/yyyy').format(selectedDate),
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold),
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800),
+                  )
+                      .animate(key: ValueKey(selectedDate))
+                      .fadeIn()
+                      .slideY(begin: 0.3, end: 0),
+                  Text(
+                    _viewMode == ReportType.daily
+                        ? _getWeekdayName(selectedDate)
+                        : "Tháng ${selectedDate.month}",
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -199,37 +238,41 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  String _getWeekdayName(DateTime date) {
-    const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    return 'Thứ ${weekdays[date.weekday % 7]}';
-  }
-
-  Widget _buildModeButton(String title, ReportType mode) {
-    final isSelected = _viewMode == mode;
+  Widget _buildTypeToggle(String title, int type) {
+    final isSelected = _transactionType == type;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            _viewMode = mode;
-            // Reset to appropriate date when switching modes
-            if (mode == ReportType.monthly) {
-              selectedDate = DateTime(selectedDate.year, selectedDate.month, 1);
-            }
+            _transactionType = type;
           });
-          _loadReport();
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2))
+                  ]
+                : [],
           ),
           alignment: Alignment.center,
           child: Text(
             title,
             style: TextStyle(
-              color: isSelected ? Theme.of(context).primaryColor : Colors.white,
+              color: isSelected
+                  ? (_transactionType == 1
+                      ? AppColors.errorRed
+                      : AppColors.successGreen)
+                  : Colors.white.withOpacity(0.7),
               fontWeight: FontWeight.bold,
+              fontSize: 15,
             ),
           ),
         ),
@@ -237,71 +280,101 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildSummaryCard(List<Transaction> expenses) {
-    final total = expenses.fold<double>(0, (sum, t) => sum + t.amount);
+  Widget _buildViewModeChip(String title, ReportType mode) {
+    final isSelected = _viewMode == mode;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _viewMode = mode;
+          if (mode == ReportType.monthly) {
+            selectedDate = DateTime(selectedDate.year, selectedDate.month, 1);
+          }
+        });
+        _loadReport();
+      },
+      child: AnimatedContainer(
+        duration: 200.ms,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+            color: isSelected
+                ? Colors.white.withOpacity(0.25)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1)),
+        child: Text(title,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  String _getWeekdayName(DateTime date) {
+    const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    return 'Thứ ${weekdays[date.weekday % 7]}';
+  }
+
+  Widget _buildSummaryCard(List<Transaction> transactions) {
+    final total = transactions.fold<double>(0, (sum, t) => sum + t.amount);
+    final color =
+        _transactionType == 1 ? AppColors.errorRed : AppColors.successGreen;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.errorRed, AppColors.errorRed.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: AppColors.errorRed.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8))
+              color: color.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 10))
         ],
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_upward,
-                    color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                "Tổng chi tiêu",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           Text(
-            CurrencyFormatter.formatCompact(total),
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+            _transactionType == 1 ? "Tổng Chi Tiêu" : "Tổng Thu Nhập",
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            CurrencyFormatter.formatCompact(total),
+            style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: -1),
+          )
+              .animate(key: ValueKey(total))
+              .scale(duration: 400.ms, curve: Curves.easeOutBack),
           if (_viewMode == ReportType.monthly) ...[
-            const SizedBox(height: 8),
-            Text(
-              "Trung bình: ${CurrencyFormatter.formatCompact(total / DateTime(selectedDate.year, selectedDate.month + 1, 0).day)}",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "Trung bình ngày: ${CurrencyFormatter.formatCompact(total / DateTime(selectedDate.year, selectedDate.month + 1, 0).day)}",
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
         ],
       ),
-    );
+    ).animate().slideY(begin: 0.2, duration: 500.ms, curve: Curves.easeOut);
   }
 
   // DAILY VIEW: Show category breakdown
@@ -469,8 +542,8 @@ class _ReportsPageState extends State<ReportsPage> {
         return PieChart(
           PieChartData(
             sections: sections,
-            centerSpaceRadius: 40,
-            sectionsSpace: 2,
+            centerSpaceRadius: 50, // Donut Style
+            sectionsSpace: 4,
             pieTouchData: PieTouchData(
               touchCallback: (FlTouchEvent event, pieTouchResponse) {
                 setState(() {
@@ -486,7 +559,7 @@ class _ReportsPageState extends State<ReportsPage> {
               },
             ),
           ),
-        );
+        ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack);
       },
     );
   }
@@ -521,7 +594,9 @@ class _ReportsPageState extends State<ReportsPage> {
         barRods: [
           BarChartRodData(
             toY: amount,
-            color: AppColors.errorRed,
+            color: _transactionType == 1
+                ? AppColors.errorRed
+                : AppColors.successGreen,
             width: 6,
             borderRadius: BorderRadius.circular(3),
             backDrawRodData: BackgroundBarChartRodData(

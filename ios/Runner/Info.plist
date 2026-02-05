@@ -63,6 +63,12 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Ứng dụng cần quyền truy cập camera để chụp ảnh hóa đơn.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Ứng dụng cần quyền truy cập micro để nhập liệu bằng giọng nói (nếu cần).</string>
+	<string>Ứng dụng cần quyền truy cập micro để nhập liệu bằng giọng nói.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ứng dụng cần quyền nhận diện giọng nói để chuyển đổi thành văn bản.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).addTransaction</string>
+	</array>
 </dict>
 </plist>

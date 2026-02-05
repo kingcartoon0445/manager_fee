@@ -27,6 +27,7 @@ import '../../domain/entities/app_settings.dart';
 import '../../data/models/monthly_surplus_model.dart';
 import '../../data/datasources/isar_service.dart';
 import '../widgets/ai_input_modal.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -139,10 +140,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 24),
 
                     // Net Flow
-                    SlideUpAnimation(
-                      delay: const Duration(milliseconds: 300),
-                      child: _buildNetFlow(income - expense, currencyFormat),
-                    ),
+                    _buildNetFlow(income - expense, currencyFormat),
 
                     const SizedBox(height: 24),
 
@@ -233,8 +231,14 @@ class _DashboardPageState extends State<DashboardPage> {
                   builder: (context) => const AiInputModal(),
                 );
               },
-              icon: const Icon(Icons.auto_awesome,
-                  color: Color(0xFF2962FF)), // Magic Icon
+              icon: const Icon(Icons.auto_awesome, color: Color(0xFF2962FF))
+                  .animate(
+                      onPlay: (controller) => controller.repeat(reverse: true))
+                  .scaleXY(
+                      begin: 1.0,
+                      end: 1.15,
+                      duration: 1.5.seconds,
+                      curve: Curves.easeInOut), // Magic Icon, Breathing
               tooltip: 'Trợ lý AI',
             ),
             const SizedBox(width: 8),
@@ -320,7 +324,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   color: Colors.white,
                   letterSpacing: -1,
                 ),
-              ),
+              )
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .slideY(begin: 0.3, curve: Curves.easeOutBack),
               const SizedBox(height: 16),
               Container(
                 padding:
@@ -441,95 +448,95 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildQuickActionBanner(BuildContext context) {
-    return SlideUpAnimation(
-      delay: const Duration(milliseconds: 250),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF00C853), Color(0xFF00E676)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-                color: const Color(0xFF00C853).withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8)),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF00C853), Color(0xFF00E676)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.shopping_basket_outlined,
-                  color: Colors.white, size: 32),
-            ),
-            const SizedBox(width: 18),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Đi Chợ Hôm Nay?',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 17)),
-                  const SizedBox(height: 6),
-                  Text('Ghi chép nhanh thực phẩm, rau củ...',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          height: 1.2,
-                          fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            ScaleAnimation(
-              onTap: () {
-                showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => const QuickShoppingModal());
-              },
-              child: Container(
-                padding: EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  color: AppColors.white,
-                ),
-                child: const Text('Nhập ngay',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.successGreen,
-                        fontSize: 13)),
-              ),
-              // ElevatedButton(
-              //   onPressed: null,
-              //   style: ElevatedButton.styleFrom(
-              //     // backgroundColor: Colors.white,
-              //     // foregroundColor: const Color(0xFF00C853),
-              //     elevation: 0,
-              //     shape: RoundedRectangleBorder(
-              //         borderRadius: BorderRadius.circular(24)),
-              //     padding: const EdgeInsets.symmetric(
-              //         horizontal: 20, vertical: 12),
-              //   ),
-              //   child: const Text('Nhập ngay',
-              //       style:
-              //           TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-              // ),
-            )
-          ],
-        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF00C853).withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 8)),
+        ],
       ),
-    );
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.shopping_basket_outlined,
+                color: Colors.white, size: 32),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Đi Chợ Hôm Nay?',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17)),
+                const SizedBox(height: 6),
+                Text('Ghi chép nhanh thực phẩm, rau củ...',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        height: 1.2,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          ScaleAnimation(
+            onTap: () {
+              showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const QuickShoppingModal());
+            },
+            child: Container(
+              padding: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                color: AppColors.white,
+              ),
+              child: const Text('Nhập ngay',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.successGreen,
+                      fontSize: 13)),
+            ),
+            // ElevatedButton(
+            //   onPressed: null,
+            //   style: ElevatedButton.styleFrom(
+            //     // backgroundColor: Colors.white,
+            //     // foregroundColor: const Color(0xFF00C853),
+            //     elevation: 0,
+            //     shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(24)),
+            //     padding: const EdgeInsets.symmetric(
+            //         horizontal: 20, vertical: 12),
+            //   ),
+            //   child: const Text('Nhập ngay',
+            //       style:
+            //           TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+            // ),
+          )
+        ],
+      ),
+    )
+        .animate()
+        .fadeIn(delay: 200.ms, duration: 500.ms)
+        .slideX(begin: 0.2, curve: Curves.easeOutBack);
   }
 
   Widget _buildNetFlow(double netFlow, NumberFormat format) {
@@ -565,7 +572,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   color: text, fontWeight: FontWeight.w800, fontSize: 20)),
         ],
       ),
-    );
+    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, curve: Curves.easeOut);
   }
 
   Widget _buildDailyExpenseDetails(List<dynamic> transactions,
@@ -716,119 +723,126 @@ class _DashboardPageState extends State<DashboardPage> {
           )
         else
           Column(
-            children: dayExpenses.map((tx) {
-              final time =
-                  '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}';
+            children: dayExpenses
+                .map((tx) {
+                  final time =
+                      '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}';
 
-              // Get category color FROM DB
-              final cat = categories.firstWhere(
-                (c) => c.id == tx.categoryId,
-                orElse: () => Category(
-                    id: 0,
-                    name: 'Danh mục khác',
-                    type: 1,
-                    icon: '?',
-                    colorValue: Colors.grey.value),
-              );
+                  // Get category color FROM DB
+                  final cat = categories.firstWhere(
+                    (c) => c.id == tx.categoryId,
+                    orElse: () => Category(
+                        id: 0,
+                        name: 'Danh mục khác',
+                        type: 1,
+                        icon: '?',
+                        colorValue: Colors.grey.value),
+                  );
 
-              final categoryColor = cat.colorValue != null
-                  ? Color(cat.colorValue!)
-                  : CategoryIcons.getColorByName(cat.name);
+                  final categoryColor = cat.colorValue != null
+                      ? Color(cat.colorValue!)
+                      : CategoryIcons.getColorByName(cat.name);
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: categoryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: categoryColor.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    // Time
-                    SizedBox(
-                      width: 50,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            time,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: categoryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: categoryColor.withOpacity(0.3),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(width: 12),
-
-                    // Note
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tx.note != "" ? tx.note : 'Không có ghi chú',
-                            style: TextStyle(
-                              // fontStyle: tx.note != ""
-                              //     ? FontStyle.normal
-                              //     : FontStyle.italic,
-                              color: Colors.grey[800],
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (tx.tags != null && tx.tags!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Wrap(
-                                spacing: 4,
-                                children: tx.tags!.map<Widget>((tag) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: categoryColor.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      tag,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: categoryColor.withOpacity(0.8),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+                    child: Row(
+                      children: [
+                        // Time
+                        SizedBox(
+                          width: 50,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                time,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
 
-                    // Amount
-                    Text(
-                      format.format(tx.amount),
-                      style: TextStyle(
-                        color: categoryColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
+                        // Note
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tx.note != "" ? tx.note : 'Không có ghi chú',
+                                style: TextStyle(
+                                  // fontStyle: tx.note != ""
+                                  //     ? FontStyle.normal
+                                  //     : FontStyle.italic,
+                                  color: Colors.grey[800],
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (tx.tags != null && tx.tags!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Wrap(
+                                    spacing: 4,
+                                    children: tx.tags!.map<Widget>((tag) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: categoryColor.withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          '#$tag',
+                                          style: TextStyle(
+                                            color:
+                                                categoryColor.withOpacity(0.8),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Amount
+                        Text(
+                          CurrencyFormatter.formatCompact(tx.amount),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                })
+                .toList()
+                .animate(interval: 50.ms)
+                .fadeIn(duration: 400.ms)
+                .slideX(begin: 0.1, curve: Curves.easeOut),
           ),
       ],
     );

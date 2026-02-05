@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
@@ -15,7 +16,8 @@ import '../../../injection_container.dart' as di;
 import 'add_transaction_modal.dart';
 
 class AiInputModal extends StatefulWidget {
-  const AiInputModal({super.key});
+  final bool autoStartListening;
+  const AiInputModal({super.key, this.autoStartListening = false});
 
   @override
   State<AiInputModal> createState() => _AiInputModalState();
@@ -32,6 +34,11 @@ class _AiInputModalState extends State<AiInputModal>
   String? _apiKey;
   String? _modelId;
 
+  // Speech to Text
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  bool _isListening = false;
+
   // Analysis Result State
   List<Map<String, dynamic>>? _analysisResults;
 
@@ -40,6 +47,51 @@ class _AiInputModalState extends State<AiInputModal>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadApiKey();
+    _initSpeech();
+    if (widget.autoStartListening) {
+      // Delay slightly to ensure UI is ready and permissions are checked by _initSpeech
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _toggleListening();
+      });
+    }
+  }
+
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize(
+      onError: (e) => debugPrint('Speech Error: $e'),
+      onStatus: (status) {
+        debugPrint('Speech Status: $status');
+        if (status == 'done' || status == 'notListening') {
+          setState(() => _isListening = false);
+        }
+      },
+    );
+    setState(() {});
+  }
+
+  void _toggleListening() async {
+    if (_isListening) {
+      await _speechToText.stop();
+      setState(() => _isListening = false);
+    } else {
+      if (!_speechEnabled) {
+        _initSpeech(); // Try init again if failed
+        if (!_speechEnabled) {
+          _showError('Không thể khởi động nhận diện giọng nói');
+          return;
+        }
+      }
+
+      setState(() => _isListening = true);
+      await _speechToText.listen(
+        onResult: (result) {
+          setState(() {
+            _textController.text = result.recognizedWords;
+          });
+        },
+        localeId: 'vi_VN',
+      );
+    }
   }
 
   Future<void> _loadApiKey() async {
@@ -321,6 +373,15 @@ class _AiInputModalState extends State<AiInputModal>
                                   borderRadius: BorderRadius.circular(12)),
                               filled: true,
                               fillColor: const Color(0xFFF8F9FD),
+                              suffixIcon: IconButton(
+                                onPressed: _toggleListening,
+                                icon: Icon(
+                                  _isListening ? Icons.mic : Icons.mic_none,
+                                  color:
+                                      _isListening ? Colors.red : Colors.grey,
+                                ),
+                                tooltip: 'Nhập bằng giọng nói',
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),

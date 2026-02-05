@@ -1,5 +1,7 @@
+import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter/material.dart';
-// import 'package:home_widget/home_widget.dart';
+import 'package:quick_actions/quick_actions.dart';
+import '../widgets/ai_input_modal.dart';
 
 import '../../injection_container.dart' as di;
 import '../../domain/usecases/process_recurring_transactions_usecase.dart';
@@ -29,6 +31,38 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _runAutomation();
+    _initQuickActions();
+  }
+
+  void _initQuickActions() {
+    const QuickActions quickActions = QuickActions();
+
+    quickActions.initialize((shortcutType) {
+      if (shortcutType == 'add_transaction') {
+        // Wait for UI to be ready
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _openAiModal(autoStart: true);
+        });
+      }
+    });
+
+    quickActions.setShortcutItems(<ShortcutItem>[
+      const ShortcutItem(
+        type: 'add_transaction',
+        localizedTitle: 'Thêm giao dịch',
+        icon:
+            'add', // Ensure 'add' icon exists in android/app/src/main/res/drawable or Assets.xcassets
+      ),
+    ]);
+  }
+
+  void _openAiModal({bool autoStart = false}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AiInputModal(autoStartListening: autoStart),
+    );
   }
 
   void _runAutomation() async {
@@ -64,38 +98,56 @@ class _HomePageState extends State<HomePage> {
           child: _pages[_currentIndex],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Tổng quan',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: Colors.black.withOpacity(.1),
+            )
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8),
+            child: GNav(
+              rippleColor: Colors.grey[300]!,
+              hoverColor: Colors.grey[100]!,
+              gap: 8,
+              activeColor: Colors.white,
+              iconSize: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              duration: const Duration(milliseconds: 400),
+              tabBackgroundColor: Colors.blue, // Primary color
+              color: Colors.grey[600], // Inactive color
+              tabs: const [
+                GButton(
+                  icon: Icons.home_outlined,
+                  text: 'Tổng quan',
+                ),
+                GButton(
+                  icon: Icons.list_alt_outlined,
+                  text: 'Giao dịch',
+                ),
+                GButton(
+                  icon: Icons.pie_chart_outline,
+                  text: 'Báo cáo',
+                ),
+                GButton(
+                  icon: Icons.settings_outlined,
+                  text: 'Cài đặt',
+                ),
+              ],
+              selectedIndex: _currentIndex,
+              onTabChange: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list_alt_outlined),
-            activeIcon: Icon(Icons.list_alt),
-            label: 'Giao dịch',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pie_chart_outline),
-            activeIcon: Icon(Icons.pie_chart),
-            label: 'Báo cáo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Cài đặt',
-          ),
-        ],
+        ),
       ),
     );
   }
