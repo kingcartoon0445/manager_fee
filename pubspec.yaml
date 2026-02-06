@@ -47,7 +47,7 @@ dependencies:
     shared_preferences: ^2.3.0
     flutter_svg: ^2.0.21
     file_picker: ^10.3.8
-    share_plus: ^7.0.0
+    share_plus: ^12.0.1
     path_provider: ^2.1.0
     flutter_local_notifications: ^19.5.0
     timezone: ^0.10.1
