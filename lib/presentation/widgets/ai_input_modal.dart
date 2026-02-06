@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/app_colors.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../data/services/ai_service.dart';
@@ -375,11 +376,17 @@ class _AiInputModalState extends State<AiInputModal>
                               fillColor: const Color(0xFFF8F9FD),
                               suffixIcon: IconButton(
                                 onPressed: _toggleListening,
-                                icon: Icon(
-                                  _isListening ? Icons.mic : Icons.mic_none,
-                                  color:
-                                      _isListening ? Colors.red : Colors.grey,
-                                ),
+                                icon: _isListening
+                                    ? const Icon(Icons.mic, color: Colors.red)
+                                        .animate(
+                                            onPlay: (controller) => controller
+                                                .repeat(reverse: true))
+                                        .scale(
+                                            duration: 600.ms,
+                                            begin: const Offset(1, 1),
+                                            end: const Offset(1.2, 1.2))
+                                    : const Icon(Icons.mic_none,
+                                        color: Colors.grey),
                                 tooltip: 'Nhập bằng giọng nói',
                               ),
                             ),

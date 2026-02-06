@@ -1,3 +1,4 @@
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:peadget/core/utils/currency_formatter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  // Version Info
+  String _version = '';
+
   // Input Controllers for Budget
   final _budgetNameController = TextEditingController();
   final _budgetAmountController = TextEditingController();
@@ -69,6 +73,14 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadInitialBalance();
     _loadApiKey();
     _loadCategories();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = '${packageInfo.version} (${packageInfo.buildNumber})';
+    });
   }
 
   Future<void> _loadApiKey() async {
@@ -958,6 +970,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     onPressed: _confirmReset,
                     icon: const Icon(Icons.delete_forever),
                     label: const Text('Reset Dữ Liệu Demo')),
+                const SizedBox(height: 20),
+                if (_version.isNotEmpty)
+                  Center(
+                    child: Text(
+                      'Phiên bản: $_version',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
+                  ),
                 const SizedBox(height: 40),
               ],
             ),
