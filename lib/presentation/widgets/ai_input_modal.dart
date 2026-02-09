@@ -48,7 +48,7 @@ class _AiInputModalState extends State<AiInputModal>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadApiKey();
-    _initSpeech();
+    // _initSpeech(); // Removed: Load on demand
     if (widget.autoStartListening) {
       // Delay slightly to ensure UI is ready and permissions are checked by _initSpeech
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -57,17 +57,17 @@ class _AiInputModalState extends State<AiInputModal>
     }
   }
 
-  void _initSpeech() async {
+  Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize(
       onError: (e) => debugPrint('Speech Error: $e'),
       onStatus: (status) {
         debugPrint('Speech Status: $status');
         if (status == 'done' || status == 'notListening') {
-          setState(() => _isListening = false);
+          if (mounted) setState(() => _isListening = false);
         }
       },
     );
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _toggleListening() async {
@@ -76,9 +76,10 @@ class _AiInputModalState extends State<AiInputModal>
       setState(() => _isListening = false);
     } else {
       if (!_speechEnabled) {
-        _initSpeech(); // Try init again if failed
+        await _initSpeech(); // Try init again (calls permission request)
         if (!_speechEnabled) {
-          _showError('Không thể khởi động nhận diện giọng nói');
+          _showError(
+              'Không thể khởi động nhận diện giọng nói. Vui lòng cấp quyền.');
           return;
         }
       }
