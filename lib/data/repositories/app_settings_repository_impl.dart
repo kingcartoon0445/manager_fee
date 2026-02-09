@@ -22,7 +22,10 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       onboardingCompletedAt: model.onboardingCompletedAt,
       initialBalance: model.initialBalance,
       lastClosedMonth: model.lastClosedMonth,
-      geminiApiKey: model.geminiApiKey,
+      geminiApiKey:
+          (model.geminiApiKey != null && model.geminiApiKey!.isNotEmpty)
+              ? model.geminiApiKey
+              : 'AIzaSyBvobDBgkpvDyP47SCg45JTnVR3T8ce5yU',
       geminiModelId: model.geminiModelId,
     );
   }
