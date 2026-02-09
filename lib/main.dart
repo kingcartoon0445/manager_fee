@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
 import 'injection_container.dart' as di;
 import 'injection_container.dart';
 import 'presentation/blocs/transaction/transaction_bloc.dart';
@@ -24,6 +25,7 @@ import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env"); // Load Environment variables
   await initializeDateFormatting('vi', null);
 
   await di.init(); // Initialize DI first to use sl()

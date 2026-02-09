@@ -58,3 +58,4 @@
 **/ios/Runner.xcodeproj/project.xcworkspace/
 **/ios/Runner.xcodeproj/xcuserdata/
 **/ios/Runner.xcworkspace/xcuserdata/
+.env

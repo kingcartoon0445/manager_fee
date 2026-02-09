@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../domain/repositories/app_settings_repository.dart';
 import '../../domain/entities/app_settings.dart';
 import '../datasources/isar_service.dart';
@@ -22,11 +23,12 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       onboardingCompletedAt: model.onboardingCompletedAt,
       initialBalance: model.initialBalance,
       lastClosedMonth: model.lastClosedMonth,
-      geminiApiKey:
-          (model.geminiApiKey != null && model.geminiApiKey!.isNotEmpty)
-              ? model.geminiApiKey
-              : 'AIzaSyBvobDBgkpvDyP47SCg45JTnVR3T8ce5yU',
-      geminiModelId: model.geminiModelId,
+      geminiApiKey: (model.geminiApiKey != null &&
+              model.geminiApiKey!.isNotEmpty)
+          ? model.geminiApiKey
+          : dotenv.env['GEMINI_API_KEY'] ??
+              'AIzaSyBvobDBgkpvDyP47SCg45JTnVR3T8ce5yU', // Use env with hardcoded fallback for safety during dev
+      geminiModelId: model.geminiModelId ?? dotenv.env['GEMINI_MODEL_ID'],
     );
   }
 
