@@ -1,2 +1,5 @@
 #include? "../Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+
+TREE_SHAKE_ICONS=false
+EXCLUDED_ARCHS[sdk=iphonesimulator*]=arm64

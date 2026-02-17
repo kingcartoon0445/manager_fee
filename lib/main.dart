@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Import dotenv
+import 'package:peadget/presentation/pages/home_page/home_page.dart';
 import 'injection_container.dart' as di;
 import 'injection_container.dart';
 import 'presentation/blocs/transaction/transaction_bloc.dart';
@@ -15,7 +16,6 @@ import 'presentation/blocs/theme/theme_state.dart';
 import 'presentation/blocs/onboarding/onboarding_bloc.dart';
 import 'presentation/blocs/onboarding/onboarding_event.dart';
 import 'presentation/blocs/onboarding/onboarding_state.dart';
-import 'presentation/pages/home_page.dart';
 import 'presentation/pages/onboarding_page.dart';
 import 'data/datasources/isar_service.dart';
 import 'data/seed_data_config.dart';

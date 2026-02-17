@@ -1,33 +1,39 @@
 import 'package:peadget/core/app_colors.dart';
 import 'package:peadget/core/category_icons.dart';
+import 'package:peadget/core/responsive_layout.dart';
 import 'package:peadget/presentation/blocs/transaction/transaction_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../blocs/transaction/transaction_bloc.dart';
-import '../blocs/transaction/transaction_state.dart';
-import '../blocs/budget/budget_bloc.dart';
-import '../blocs/budget/budget_event.dart';
-import '../blocs/budget/budget_state.dart';
+import '../../blocs/transaction/transaction_bloc.dart';
+import '../../blocs/transaction/transaction_state.dart';
+import '../../blocs/budget/budget_bloc.dart';
+import '../../blocs/budget/budget_event.dart';
+import '../../blocs/budget/budget_state.dart';
 
-import '../../injection_container.dart' as di;
-import '../widgets/add_transaction_modal.dart';
-import '../widgets/quick_shopping_modal.dart';
-import '../../core/animations.dart';
-import '../../core/thousand_separator_formatter.dart';
-import '../../core/utils/currency_formatter.dart';
-import '../../domain/entities/budget.dart';
-import '../../domain/entities/category.dart';
-import '../../domain/entities/transaction.dart';
-import '../../core/utils/financial_calculator.dart';
+import '../../../injection_container.dart' as di;
+import '../../widgets/add_transaction_modal.dart';
+import '../../widgets/quick_shopping_modal.dart';
+import '../../widgets/quick_action_banner.dart';
+import '../../../core/animations.dart';
+import '../../../core/thousand_separator_formatter.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../domain/entities/budget.dart';
+import '../../../domain/entities/category.dart';
+import '../../../domain/entities/transaction.dart';
+import '../../../core/utils/financial_calculator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/monthly_report_dialog.dart';
-import '../../domain/repositories/app_settings_repository.dart';
-import '../../domain/entities/app_settings.dart';
-import '../../data/models/monthly_surplus_model.dart';
-import '../../data/datasources/isar_service.dart';
-import '../widgets/ai_input_modal.dart';
+import '../../widgets/monthly_report_dialog.dart';
+import '../../../domain/repositories/app_settings_repository.dart';
+import '../../../domain/entities/app_settings.dart';
+import '../../../data/models/monthly_surplus_model.dart';
+import '../../../data/datasources/isar_service.dart';
+import '../../pages/ai_chat/ai_chat_page.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'mobile/dashboard_page_mobile.dart';
+import 'ipad/dashboard_page_ipad.dart';
+
+enum RightPanelMode { addTransaction, quickShop, history, aiChat }
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -39,6 +45,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   DateTime _currentMonth = DateTime.now();
   double _initialBalance = 0;
+  RightPanelMode _rightPanelMode = RightPanelMode.addTransaction;
 
   @override
   void initState() {
@@ -66,116 +73,144 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = ResponsiveLayout.isTablet(context);
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final useTabletLayout = isTablet && isLandscape;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FD), // Very light cool grey/white
-      body: SafeArea(
-        child: BlocConsumer<TransactionBloc, TransactionState>(
-          listener: (context, state) {
-            if (state is TransactionLoaded) {
-              _checkAndShowMonthlyReport(context, state.transactions);
-            }
-          },
-          builder: (context, txState) {
-            double closingBalance = 0;
-            double income = 0;
-            double expense = 0;
-            List<dynamic> transactions = [];
-            List<Category> categories = [];
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: BlocConsumer<TransactionBloc, TransactionState>(
+            listener: (context, state) {
+              if (state is TransactionLoaded) {
+                _checkAndShowMonthlyReport(context, state.transactions);
+              }
+            },
+            builder: (context, txState) {
+              double closingBalance = 0;
+              double income = 0;
+              double expense = 0;
+              List<dynamic> transactions = [];
+              List<Category> categories = [];
 
-            if (txState is TransactionLoaded) {
-              final allTx = txState.transactions;
+              if (txState is TransactionLoaded) {
+                final allTx = txState.transactions;
 
-              income =
-                  FinancialCalculator.calculateIncome(allTx, _currentMonth);
-              expense =
-                  FinancialCalculator.calculateExpense(allTx, _currentMonth);
-              closingBalance = FinancialCalculator.calculateClosingBalance(
-                  allTx, _currentMonth, _initialBalance);
+                income =
+                    FinancialCalculator.calculateIncome(allTx, _currentMonth);
+                expense =
+                    FinancialCalculator.calculateExpense(allTx, _currentMonth);
+                closingBalance = FinancialCalculator.calculateClosingBalance(
+                    allTx, _currentMonth, _initialBalance);
 
-              // Filter transactions for current month list display
-              transactions = allTx
-                  .where((t) =>
-                      t.date.year == _currentMonth.year &&
-                      t.date.month == _currentMonth.month)
-                  .toList();
-              transactions.sort((a, b) => b.date.compareTo(a.date));
-              categories = txState.categories;
-            }
+                // Filter transactions for current month list display
+                transactions = allTx
+                    .where((t) =>
+                        t.date.year == _currentMonth.year &&
+                        t.date.month == _currentMonth.month)
+                    .toList();
+                transactions.sort((a, b) => b.date.compareTo(a.date));
+                categories = txState.categories;
+              }
 
-            final currencyFormat = NumberFormat.currency(
-                locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+              final currencyFormat = NumberFormat.currency(
+                  locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
 
-            // Calculate Net Available
-            double netAvailable = 0;
-            final budgetState = context.watch<BudgetBloc>().state;
-            if (budgetState is BudgetLoaded && txState is TransactionLoaded) {
-              netAvailable = FinancialCalculator.calculateNetAvailable(
-                  closingBalance, budgetState.budgets, txState.transactions);
-            } else {
-              // Fallback if data not fully loaded, though closingBalance is 0 initially
-              netAvailable = closingBalance;
-            }
+              // Calculate Net Available
+              double netAvailable = 0;
+              final budgetState = context.watch<BudgetBloc>().state;
+              if (budgetState is BudgetLoaded && txState is TransactionLoaded) {
+                netAvailable = FinancialCalculator.calculateNetAvailable(
+                    closingBalance, budgetState.budgets, txState.transactions);
+              } else {
+                // Fallback if data not fully loaded, though closingBalance is 0 initially
+                netAvailable = closingBalance;
+              }
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                _loadData();
+              // Pre-build shared widget sections
+              final header = _buildHeader();
+              final balanceSection = _buildBalanceSection(closingBalance,
+                  netAvailable, income, expense, currencyFormat);
+              final quickActionBanner = _buildQuickActionBanner(context);
+              final netFlow = _buildNetFlow(income - expense, currencyFormat);
+              final budgetSection = _buildBudgetSection(transactions);
+              final dailyExpenseDetails = _buildDailyExpenseDetails(
+                  transactions, categories, currencyFormat);
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  _loadData();
+                },
+                child: useTabletLayout
+                    ? DashboardPageIpad(
+                        header: header,
+                        balanceSection: balanceSection,
+                        quickActionBanner: quickActionBanner,
+                        netFlow: netFlow,
+                        budgetSection: budgetSection,
+                        dailyExpenseDetails: dailyExpenseDetails,
+                        rightPanelMode: _rightPanelMode,
+                        onSwitchMode: (mode) {
+                          setState(() {
+                            _rightPanelMode = mode;
+                          });
+                        },
+                        onResetRightPanel: () {
+                          setState(() {
+                            _rightPanelMode = RightPanelMode.addTransaction;
+                          });
+                        },
+                      )
+                    : DashboardPageMobile(
+                        header: header,
+                        balanceSection: balanceSection,
+                        quickActionBanner: quickActionBanner,
+                        netFlow: netFlow,
+                        budgetSection: budgetSection,
+                        dailyExpenseDetails: dailyExpenseDetails,
+                      ),
+              );
+            },
+          ),
+        ),
+      ),
+      floatingActionButton: !useTabletLayout
+          ? ScaleAnimation(
+              onTap: () {
+                showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const AddTransactionModal());
               },
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0, vertical: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    _buildHeader(),
-                    const SizedBox(height: 24),
-
-                    // Balance Section
-                    _buildBalanceSection(closingBalance, netAvailable, income,
-                        expense, currencyFormat),
-                    const SizedBox(height: 24),
-
-                    // Quick Action Banner
-                    _buildQuickActionBanner(context),
-                    const SizedBox(height: 24),
-
-                    // Net Flow
-                    _buildNetFlow(income - expense, currencyFormat),
-
-                    const SizedBox(height: 24),
-
-                    // Budgets
-                    _buildBudgetSection(transactions),
-                    const SizedBox(height: 16),
-                    SlideUpAnimation(
-                      delay: const Duration(milliseconds: 350),
-                      child: _buildDailyExpenseDetails(
-                          transactions, categories, currencyFormat),
-                    ),
-                    const SizedBox(height: 100), // Spacing for FAB
-                  ],
-                ),
+              child: FloatingActionButton(
+                onPressed: null,
+                backgroundColor: const Color(0xFF2962FF),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30)),
+                child: const Icon(Icons.add, color: Colors.white, size: 30),
               ),
-            );
-          },
-        ),
-      ),
-      floatingActionButton: ScaleAnimation(
-        onTap: () {
-          showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => const AddTransactionModal());
-        },
-        child: FloatingActionButton(
-          onPressed: null,
-          backgroundColor: const Color(0xFF2962FF), // Deep Blue
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-          child: const Icon(Icons.add, color: Colors.white, size: 30),
-        ),
-      ),
+            )
+          : (_rightPanelMode == RightPanelMode.aiChat
+              ? null
+              : ScaleAnimation(
+                  onTap: () {
+                    setState(() {
+                      _rightPanelMode = RightPanelMode.aiChat;
+                    });
+                  },
+                  child: FloatingActionButton(
+                    onPressed: null,
+                    backgroundColor: AppColors.primaryBlue,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
+                    child: const Icon(Icons.auto_awesome,
+                        color: Colors.white, size: 30),
+                  ),
+                )),
     );
   }
 
@@ -224,11 +259,8 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             IconButton(
               onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const AiInputModal(),
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AiChatPage()),
                 );
               },
               icon: const Icon(Icons.auto_awesome, color: Color(0xFF2962FF))
@@ -307,12 +339,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Text('TỔNG TÀI SẢN',
                       style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1)),
+                  const SizedBox(width: 6),
+                  _buildInfoTooltip('Tổng tiền mặt hiện có trong ví.'),
                 ],
               ),
               const SizedBox(height: 16),
@@ -345,11 +380,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Tổng tiền (Khả dụng)',
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500)),
+                        Row(
+                          children: [
+                            Text('Tổng tiền (Khả dụng)',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(width: 4),
+                            _buildInfoTooltip(
+                                'Số tiền còn lại có thể chi tiêu (sau khi trừ ngân sách dự kiến).',
+                                size: 14),
+                          ],
+                        ),
                         Text(
                           format.format(netAvailable),
                           style: const TextStyle(
@@ -376,7 +419,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   Icons.arrow_downward,
                   const Color(0xFF00E676), // Green
                   const Color(0xFFE8F5E9), // Light Green
-                  format),
+                  format,
+                  'Tổng thu nhập thực tế trong tháng.'),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -386,7 +430,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   Icons.arrow_upward,
                   const Color(0xFFFF5252), // Red
                   const Color(0xFFFFEBEE), // Light Red
-                  format),
+                  format,
+                  'Tổng chi tiêu thực tế trong tháng.'),
             ),
           ],
         ),
@@ -394,8 +439,14 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildMiniStatCard(String title, double amount, IconData icon,
-      Color iconColor, Color bgColor, NumberFormat format) {
+  Widget _buildMiniStatCard(
+      String title,
+      double amount,
+      IconData icon,
+      Color iconColor,
+      Color bgColor,
+      NumberFormat format,
+      String tooltipMessage) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -427,6 +478,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       color: Colors.grey[600],
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              _buildInfoTooltip(tooltipMessage,
+                  color: Colors.grey[400]!, size: 16),
             ],
           ),
           const SizedBox(height: 12),
@@ -447,96 +501,47 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildQuickActionBanner(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+  Widget _buildInfoTooltip(String message,
+      {Color color = Colors.white70, double size = 16}) {
+    return Tooltip(
+      message: message,
+      triggerMode: TooltipTriggerMode.tap,
+      showDuration: const Duration(seconds: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00C853), Color(0xFF00E676)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-              color: const Color(0xFF00C853).withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 8)),
-        ],
+        color: const Color(0xFF263238).withOpacity(0.95),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.shopping_basket_outlined,
-                color: Colors.white, size: 32),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Đi Chợ Hôm Nay?',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17)),
-                const SizedBox(height: 6),
-                Text('Ghi chép nhanh thực phẩm, rau củ...',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        height: 1.2,
-                        fontWeight: FontWeight.w500)),
-              ],
-            ),
-          ),
-          ScaleAnimation(
-            onTap: () {
-              showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => const QuickShoppingModal());
-            },
-            child: Container(
-              padding: EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                color: AppColors.white,
-              ),
-              child: const Text('Nhập ngay',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.successGreen,
-                      fontSize: 13)),
-            ),
-            // ElevatedButton(
-            //   onPressed: null,
-            //   style: ElevatedButton.styleFrom(
-            //     // backgroundColor: Colors.white,
-            //     // foregroundColor: const Color(0xFF00C853),
-            //     elevation: 0,
-            //     shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(24)),
-            //     padding: const EdgeInsets.symmetric(
-            //         horizontal: 20, vertical: 12),
-            //   ),
-            //   child: const Text('Nhập ngay',
-            //       style:
-            //           TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-            // ),
-          )
-        ],
+      textStyle: const TextStyle(color: Colors.white, fontSize: 13),
+      child: Padding(
+        padding: const EdgeInsets.all(4.0), // Touch target padding
+        child: Icon(Icons.info_outline, size: size, color: color),
       ),
-    )
-        .animate()
-        .fadeIn(delay: 200.ms, duration: 500.ms)
-        .slideX(begin: 0.2, curve: Curves.easeOutBack);
+    );
+  }
+
+  Widget _buildQuickActionBanner(BuildContext context) {
+    final isTablet = ResponsiveLayout.isTablet(context);
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final useTabletLayout = isTablet && isLandscape;
+
+    return QuickActionBanner(
+      onTap: () {
+        if (useTabletLayout) {
+          setState(() {
+            _rightPanelMode = RightPanelMode.quickShop;
+          });
+        } else {
+          showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (_) => const QuickShoppingModal());
+        }
+      },
+    );
   }
 
   Widget _buildNetFlow(double netFlow, NumberFormat format) {
@@ -557,13 +562,23 @@ class _DashboardPageState extends State<DashboardPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text('Dòng tiền Thu - Chi',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15)),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text('Dòng tiền Thu - Chi',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15)),
+                ),
+                const SizedBox(width: 6),
+                _buildInfoTooltip(
+                    'Chênh lệch giữa Thu và Chi. (Dương = Dư, Âm = Thâm hụt)',
+                    color: Colors.grey[500]!),
+              ],
+            ),
           ),
           Text(CurrencyFormatter.formatCompact(netFlow),
               maxLines: 2,

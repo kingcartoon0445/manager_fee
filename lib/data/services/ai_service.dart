@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -12,7 +13,7 @@ class AiService {
 
   /// 1. Extract Transaction(s) from Natural Language Text using Gemini
   Future<List<Map<String, dynamic>>> extractTransactionFromText(
-      String text) async {
+      String text, List<String> categoryNames) async {
     try {
       final currentYear = DateTime.now().year;
       final currentDate =
@@ -30,14 +31,14 @@ class AiService {
       Return a JSON ARRAY of transaction objects. Each object should have these fields:
       - "amount": number (integer, if not found return 0)
       - "note": string (short description)
-      - "category_type": string (Choose EXACTLY one of these Vietnamese names: "Ăn uống", "Di chuyển", "Mua sắm", "Giải trí", "Giáo dục", "Hóa đơn", "Điện nước", "Nhà cửa", "Con cái", "Hiếu hỉ", "Bảo hiểm", "Sửa chữa", "Làm đẹp", "Thú cưng", "Gia đình", "Quà tặng", "Du lịch", "Chợ", "Thưởng", "Đầu tư", "Lương", "Khác")
+      - "type": string (Classify as "income" (thu nhập) or "expense" (chi tiêu). Default "expense" if unsure.)
+      - "category_type": string (Choose EXACTLY one of these Vietnamese names: "${categoryNames.join('", "')}")
       - "date": string (ISO8601 format YYYY-MM-DD, use current year $currentYear if year not specified, default to today $currentDate if date not found)
       
-      Example Input: "cafe 30k, xăng 50k, ăn trưa 45k"
+      Example Input: "cafe 30k, lương 20 triệu"
       Example JSON: [
-        {"amount": 30000, "note": "cafe", "category_type": "Ăn uống", "date": "$currentDate"},
-        {"amount": 50000, "note": "xăng", "category_type": "Di chuyển", "date": "$currentDate"},
-        {"amount": 45000, "note": "ăn trưa", "category_type": "Ăn uống", "date": "$currentDate"}
+        {"amount": 30000, "note": "cafe", "type": "expense", "category_type": "Ăn uống", "date": "$currentDate"},
+        {"amount": 20000000, "note": "lương", "type": "income", "category_type": "Lương", "date": "$currentDate"}
       ]
       
       If there is only one transaction, still return an array with one element.
@@ -65,70 +66,66 @@ class AiService {
         throw Exception("Unexpected response format");
       }
     } catch (e) {
-      print('AI Text Extraction Error: $e');
+      debugPrint('AI Text Extraction Error: $e');
       throw Exception('Failed to process text: $e');
     }
   }
 
-  /// 2. OCR from Image using ML Kit
-  Future<String> extractTextFromImage(XFile imageFile) async {
-    try {
-      final inputImage = InputImage.fromFilePath(imageFile.path);
-      final textRecognizer =
-          TextRecognizer(script: TextRecognitionScript.latin);
-      final RecognizedText recognizedText =
-          await textRecognizer.processImage(inputImage);
-
-      await textRecognizer.close();
-      return recognizedText.text;
-    } catch (e) {
-      print('OCR Error: $e');
-      throw Exception('Failed to read text from image');
-    }
-  }
-
-  /// 3. Extract Transaction from Receipt Image (OCR + Gemini)
   Future<Map<String, dynamic>> extractTransactionFromReceipt(
-      XFile imageFile) async {
-    // Step 1: Get raw text
-    final rawText = await extractTextFromImage(imageFile);
-
-    if (rawText.isEmpty) throw Exception("No text found in image");
-
-    // Step 2: Ask Gemini to parse it
+      XFile imageFile, List<String> categoryNames) async {
     try {
       final model = GenerativeModel(
-        model: modelId,
+        model:
+            modelId, // Use the configured model (flash recommended for images)
         apiKey: apiKey,
       );
 
+      final imageBytes = await imageFile.readAsBytes();
       final prompt = '''
-      Analyze this receipt text and extract the total amount and merchant name.
-      Receipt Text:
-      """
-      $rawText
-      """
+      Analyze this receipt image and extract the total amount and merchant name.
       
-      Return a JSON object with:
-      - "amount": number (total amount found, handle "thounds separators" like 100.000 or 100,000 correctly as 100000)
-      - "note": string (Merchant name/Store name combined with main items if possible)
-      - "category_type": string (guess category based on items: "Food", "Shopping", "Bills", "Transport", "Other")
-      - "date": string (ISO8601 format YYYY-MM-DD found in receipt, default to today if not found)
+      Return a STRICT JSON Object with these fields:
+      - "amount": number (total amount found, handle "thousands separators" like 100.000 or 100,000 correctly as 100000. Ignore currency symbols like "đ", "VND")
+      - "note": string (Merchant name/Store name combined with main items if possible. Keep it short.)
+      - "category_type": string (Choose EXACTLY one of these: "${categoryNames.join('", "')}")
+      - "date": string (ISO8601 format YYYY-MM-DD found in receipt. If strictly not found, use today's date)
 
-      Only return JSON.
+      Example JSON:
+      {
+        "amount": 150000,
+        "note": "Highlands Coffee - Cafe sữa",
+        "category_type": "Ăn uống",
+        "date": "2024-05-20"
+      }
+
+      Only return the clean JSON object. No markdown formatting.
       ''';
 
-      final content = [Content.text(prompt)];
+      final content = [
+        Content.multi([
+          TextPart(prompt),
+          DataPart('image/jpeg', imageBytes), // Assuming jpeg/png
+        ])
+      ];
+
       final response = await model.generateContent(content);
 
       if (response.text == null) throw Exception("No response from AI");
 
       String jsonStr =
           response.text!.replaceAll('```json', '').replaceAll('```', '').trim();
+
+      // Cleanup cleanup: sometimes there are extra characters
+      final startIndex = jsonStr.indexOf('{');
+      final endIndex = jsonStr.lastIndexOf('}');
+      if (startIndex != -1 && endIndex != -1) {
+        jsonStr = jsonStr.substring(startIndex, endIndex + 1);
+      }
+
       return json.decode(jsonStr);
     } catch (e) {
-      print('AI Receipt Analysis Error: $e');
-      throw Exception('Failed to analyze receipt');
+      debugPrint('AI Receipt Analysis Error: $e');
+      throw Exception('Failed to analyze receipt: $e');
     }
   }
 

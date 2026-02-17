@@ -29,6 +29,7 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
           : dotenv.env['GEMINI_API_KEY'] ??
               'AIzaSyBvobDBgkpvDyP47SCg45JTnVR3T8ce5yU', // Use env with hardcoded fallback for safety during dev
       geminiModelId: model.geminiModelId ?? dotenv.env['GEMINI_MODEL_ID'],
+      isAiConsentGiven: model.isAiConsentGiven ?? false,
     );
   }
 
@@ -42,7 +43,8 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
       ..initialBalance = settings.initialBalance
       ..lastClosedMonth = settings.lastClosedMonth
       ..geminiApiKey = settings.geminiApiKey
-      ..geminiModelId = settings.geminiModelId;
+      ..geminiModelId = settings.geminiModelId
+      ..isAiConsentGiven = settings.isAiConsentGiven;
 
     await isar.writeTxn(() async {
       await isar.appSettingsModels.put(model);

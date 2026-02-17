@@ -108,8 +108,18 @@ class _AiInputModalState extends State<AiInputModal>
   @override
   void dispose() {
     _tabController.dispose();
-    _textController.dispose();
     super.dispose();
+  }
+
+  Future<List<String>> _getExpenseCategoryNames() async {
+    try {
+      final getCategoriesUseCase = di.sl<GetCategoriesUseCase>();
+      final categories = await getCategoriesUseCase();
+      return categories.where((c) => c.type == 1).map((c) => c.name).toList();
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+      return [];
+    }
   }
 
   Future<void> _processText() async {
@@ -129,8 +139,9 @@ class _AiInputModalState extends State<AiInputModal>
     try {
       final aiService =
           AiService(apiKey: _apiKey!, modelId: _modelId ?? 'gemini-1.5-flash');
-      final results =
-          await aiService.extractTransactionFromText(_textController.text);
+      final categoryNames = await _getExpenseCategoryNames();
+      final results = await aiService.extractTransactionFromText(
+          _textController.text, categoryNames);
       _handleAiResult(results);
     } catch (e) {
       debugPrint('AI Error: $e'); // Log error to console
@@ -160,7 +171,9 @@ class _AiInputModalState extends State<AiInputModal>
 
       final aiService =
           AiService(apiKey: _apiKey!, modelId: _modelId ?? 'gemini-1.5-flash');
-      final result = await aiService.extractTransactionFromReceipt(image);
+      final categoryNames = await _getExpenseCategoryNames();
+      final result =
+          await aiService.extractTransactionFromReceipt(image, categoryNames);
       // Wrap single receipt result in a list for consistency
       _handleAiResult([result]);
     } catch (e) {

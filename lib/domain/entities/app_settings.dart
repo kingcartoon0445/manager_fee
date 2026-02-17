@@ -6,6 +6,7 @@ class AppSettings {
   final DateTime? lastClosedMonth;
   final String? geminiApiKey;
   final String? geminiModelId;
+  final bool isAiConsentGiven; // New field for privacy compliance
 
   AppSettings({
     required this.id,
@@ -15,5 +16,6 @@ class AppSettings {
     this.lastClosedMonth,
     this.geminiApiKey,
     this.geminiModelId,
+    this.isAiConsentGiven = false,
   });
 }

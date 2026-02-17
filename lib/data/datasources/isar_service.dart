@@ -10,6 +10,8 @@ import '../models/quick_shopping_item_model.dart';
 import '../models/monthly_surplus_model.dart';
 import 'package:flutter/material.dart'; // For Colors/Icons
 
+import '../models/chat_message_model.dart';
+
 class IsarService {
   late Future<Isar> db;
 
@@ -29,7 +31,8 @@ class IsarService {
           RecurringTransactionModelSchema,
           AppSettingsModelSchema,
           QuickShoppingItemModelSchema,
-          MonthlySurplusModelSchema
+          MonthlySurplusModelSchema,
+          ChatMessageModelSchema,
         ],
         directory: dir.path,
         inspector: true,

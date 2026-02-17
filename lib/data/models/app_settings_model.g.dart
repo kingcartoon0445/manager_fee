@@ -37,13 +37,18 @@ const AppSettingsModelSchema = CollectionSchema(
       name: r'initialBalance',
       type: IsarType.double,
     ),
-    r'lastClosedMonth': PropertySchema(
+    r'isAiConsentGiven': PropertySchema(
       id: 4,
+      name: r'isAiConsentGiven',
+      type: IsarType.bool,
+    ),
+    r'lastClosedMonth': PropertySchema(
+      id: 5,
       name: r'lastClosedMonth',
       type: IsarType.dateTime,
     ),
     r'onboardingCompletedAt': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'onboardingCompletedAt',
       type: IsarType.dateTime,
     )
@@ -93,8 +98,9 @@ void _appSettingsModelSerialize(
   writer.writeString(offsets[1], object.geminiModelId);
   writer.writeBool(offsets[2], object.hasCompletedOnboarding);
   writer.writeDouble(offsets[3], object.initialBalance);
-  writer.writeDateTime(offsets[4], object.lastClosedMonth);
-  writer.writeDateTime(offsets[5], object.onboardingCompletedAt);
+  writer.writeBool(offsets[4], object.isAiConsentGiven);
+  writer.writeDateTime(offsets[5], object.lastClosedMonth);
+  writer.writeDateTime(offsets[6], object.onboardingCompletedAt);
 }
 
 AppSettingsModel _appSettingsModelDeserialize(
@@ -109,8 +115,9 @@ AppSettingsModel _appSettingsModelDeserialize(
   object.hasCompletedOnboarding = reader.readBool(offsets[2]);
   object.id = id;
   object.initialBalance = reader.readDoubleOrNull(offsets[3]);
-  object.lastClosedMonth = reader.readDateTimeOrNull(offsets[4]);
-  object.onboardingCompletedAt = reader.readDateTimeOrNull(offsets[5]);
+  object.isAiConsentGiven = reader.readBoolOrNull(offsets[4]);
+  object.lastClosedMonth = reader.readDateTimeOrNull(offsets[5]);
+  object.onboardingCompletedAt = reader.readDateTimeOrNull(offsets[6]);
   return object;
 }
 
@@ -130,8 +137,10 @@ P _appSettingsModelDeserializeProp<P>(
     case 3:
       return (reader.readDoubleOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 5:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 6:
       return (reader.readDateTimeOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -691,6 +700,34 @@ extension AppSettingsModelQueryFilter
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      isAiConsentGivenIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isAiConsentGiven',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      isAiConsentGivenIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isAiConsentGiven',
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
+      isAiConsentGivenEqualTo(bool? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isAiConsentGiven',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterFilterCondition>
       lastClosedMonthIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -904,6 +941,20 @@ extension AppSettingsModelQuerySortBy
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      sortByIsAiConsentGiven() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAiConsentGiven', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      sortByIsAiConsentGivenDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAiConsentGiven', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
       sortByLastClosedMonth() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastClosedMonth', Sort.asc);
@@ -1004,6 +1055,20 @@ extension AppSettingsModelQuerySortThenBy
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      thenByIsAiConsentGiven() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAiConsentGiven', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
+      thenByIsAiConsentGivenDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isAiConsentGiven', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QAfterSortBy>
       thenByLastClosedMonth() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'lastClosedMonth', Sort.asc);
@@ -1064,6 +1129,13 @@ extension AppSettingsModelQueryWhereDistinct
   }
 
   QueryBuilder<AppSettingsModel, AppSettingsModel, QDistinct>
+      distinctByIsAiConsentGiven() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isAiConsentGiven');
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, AppSettingsModel, QDistinct>
       distinctByLastClosedMonth() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'lastClosedMonth');
@@ -1111,6 +1183,13 @@ extension AppSettingsModelQueryProperty
       initialBalanceProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'initialBalance');
+    });
+  }
+
+  QueryBuilder<AppSettingsModel, bool?, QQueryOperations>
+      isAiConsentGivenProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isAiConsentGiven');
     });
   }
 

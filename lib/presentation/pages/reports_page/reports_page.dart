@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../blocs/report/report_bloc.dart';
-import '../blocs/report/report_event.dart';
-import '../blocs/report/report_state.dart';
-import '../../domain/entities/transaction.dart';
-import '../../domain/entities/category.dart';
-import '../../core/app_colors.dart';
-import '../../core/category_icons.dart';
+import '../../blocs/report/report_bloc.dart';
+import '../../blocs/report/report_event.dart';
+import '../../blocs/report/report_state.dart';
+import '../../../domain/entities/transaction.dart';
+import '../../../domain/entities/category.dart';
+import '../../../core/app_colors.dart';
+import '../../../core/category_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../core/utils/currency_formatter.dart';
-import 'surplus_history_page.dart';
+import '../../../core/utils/currency_formatter.dart';
+import '../../../core/responsive_layout.dart';
+import '../surplus_history_page.dart';
+import 'mobile/reports_page_mobile.dart';
+import 'ipad/reports_page_ipad.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -80,66 +83,75 @@ class _ReportsPageState extends State<ReportsPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: BlocBuilder<ReportBloc, ReportState>(
-              builder: (context, state) {
-                if (state is ReportLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is ReportLoaded) {
-                  // Filter by selected type
-                  final filteredTransactions = state.transactions
-                      .where((t) => t.type == _transactionType)
-                      .toList();
+      body: _buildBody(context),
+    );
+  }
 
-                  if (filteredTransactions.isEmpty) {
-                    return Center(
-                        child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.hourglass_empty,
-                            size: 60, color: Colors.grey[300]),
-                        const SizedBox(height: 16),
-                        const Text("Chưa có dữ liệu",
-                            style: TextStyle(color: Colors.grey)),
-                      ],
-                    ));
-                  }
+  Widget _buildBody(BuildContext context) {
+    final isTablet = ResponsiveLayout.isTablet(context);
+    final body = Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: BlocBuilder<ReportBloc, ReportState>(
+            builder: (context, state) {
+              if (state is ReportLoading) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (state is ReportLoaded) {
+                final filteredTransactions = state.transactions
+                    .where((t) => t.type == _transactionType)
+                    .toList();
 
-                  return RefreshIndicator(
-                    onRefresh: () async => _loadReport(),
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSummaryCard(filteredTransactions),
-                            const SizedBox(height: 24),
-                            if (_viewMode == ReportType.daily)
-                              _buildDailyView(
-                                  filteredTransactions, state.categories)
-                            else
-                              _buildMonthlyView(
-                                  filteredTransactions, state.categories),
-                          ],
-                        ),
+                if (filteredTransactions.isEmpty) {
+                  return Center(
+                      child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.hourglass_empty,
+                          size: 60, color: Colors.grey[300]),
+                      const SizedBox(height: 16),
+                      const Text("Chưa có dữ liệu",
+                          style: TextStyle(color: Colors.grey)),
+                    ],
+                  ));
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async => _loadReport(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSummaryCard(filteredTransactions),
+                          const SizedBox(height: 24),
+                          if (_viewMode == ReportType.daily)
+                            _buildDailyView(
+                                filteredTransactions, state.categories)
+                          else
+                            _buildMonthlyView(
+                                filteredTransactions, state.categories),
+                        ],
                       ),
                     ),
-                  );
-                } else if (state is ReportError) {
-                  return Center(child: Text(state.message));
-                }
-                return const SizedBox();
-              },
-            ),
+                  ),
+                );
+              } else if (state is ReportError) {
+                return Center(child: Text(state.message));
+              }
+              return const SizedBox();
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
+
+    if (isTablet) {
+      return ReportsPageIpad(child: body);
+    }
+    return ReportsPageMobile(child: body);
   }
 
   Widget _buildHeader() {

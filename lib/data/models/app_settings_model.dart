@@ -17,4 +17,6 @@ class AppSettingsModel {
   String? geminiApiKey;
 
   String? geminiModelId;
+
+  bool? isAiConsentGiven;
 }

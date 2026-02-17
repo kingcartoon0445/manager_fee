@@ -11,7 +11,10 @@ import 'package:peadget/domain/repositories/transaction_repository.dart';
 import 'package:peadget/domain/repositories/category_repository.dart';
 import 'package:peadget/domain/repositories/budget_repository.dart';
 import 'package:peadget/domain/repositories/recurring_transaction_repository.dart';
+
 import 'package:peadget/domain/repositories/app_settings_repository.dart';
+import 'package:peadget/domain/repositories/chat_repository.dart';
+import 'package:peadget/data/repositories/chat_repository_impl.dart';
 import 'package:peadget/domain/usecases/add_transaction_usecase.dart';
 import 'package:peadget/domain/usecases/get_transactions_usecase.dart';
 import 'package:peadget/domain/usecases/get_dashboard_stats_usecase.dart';
@@ -64,6 +67,9 @@ Future<void> init() async {
   sl.registerLazySingleton<AppSettingsRepository>(
     () => AppSettingsRepositoryImpl(sl()),
   );
+  sl.registerLazySingleton<ChatRepository>(
+    () => ChatRepositoryImpl(sl()),
+  );
 
   // Use Cases
   sl.registerLazySingleton(() => AddTransactionUseCase(sl()));
@@ -95,6 +101,7 @@ Future<void> init() async {
       getTransactionsUseCase: sl(),
       getDashboardStatsUseCase: sl(),
       getCategoriesUseCase: sl(),
+      chatRepository: sl(),
     ),
   );
   sl.registerFactory(

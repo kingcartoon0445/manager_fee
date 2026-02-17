@@ -96,7 +96,7 @@ class CategoryIcons {
     'name': 'Chợ',
     // Using store_front or local_grocery_store as similar to market
     'icon': Icons.storefront,
-    'color': Color(0xFF4CAF50), // Green (Same as Salary, but requested by user)
+    'color': Color(0xFF00C853), // Green Accent 700 (Distinct from Salary)
     'type': 1, // Expense
   };
 
@@ -239,9 +239,43 @@ class CategoryIcons {
         (cat) => cat['name'] == name,
         orElse: () => other,
       );
+
+      // If it's strictly the 'other' category map (id 15), generate a color
+      if (category['id'] == 15 && name != 'Danh mục khác') {
+        return _generateColorFromName(name);
+      }
       return category['color'] as Color;
     } catch (e) {
-      return const Color(0xFF9E9E9E); // Default Grey
+      // Fallback for completely unknown categories not in the list
+      return _generateColorFromName(name);
     }
+  }
+
+  /// Generate a deterministic color from a string name
+  static Color _generateColorFromName(String name) {
+    final int hash = name.hashCode;
+    // List of nice colors (Material Primaries + Accents)
+    final List<Color> palette = [
+      Colors.red,
+      Colors.pink,
+      Colors.purple,
+      Colors.deepPurple,
+      Colors.indigo,
+      Colors.blue,
+      Colors.lightBlue,
+      Colors.cyan,
+      Colors.teal,
+      Colors.green,
+      Colors.lightGreen,
+      Colors.lime,
+      Colors.yellow[700]!, // Darker yellow for visibility
+      Colors.amber,
+      Colors.orange,
+      Colors.deepOrange,
+      Colors.brown,
+      Colors.blueGrey,
+    ];
+    // Use absolute value of hash to pick an index
+    return palette[hash.abs() % palette.length];
   }
 }

@@ -1,0 +1,25 @@
+Cập Nhật Chính Sách Quyền Riêng Tư (Privacy Policy Update)
+
+Vui lòng thêm phần sau vào Chính sách Quyền riêng tư của bạn để tuân thủ các yêu cầu của App Store về việc sử dụng AI:
+
+---
+
+## Sử dụng AI và Dữ liệu Bên thứ ba
+
+Ứng dụng này sử dụng các dịch vụ trí tuệ nhân tạo (AI) do Google Gemini cung cấp để hỗ trợ người dùng nhập liệu giao dịch nhanh chóng từ văn bản và hình ảnh hóa đơn.
+
+1. **Dữ liệu được thu thập và gửi đi**:
+   - Khi bạn sử dụng tính năng "Trò chuyện AI" hoặc "Quét hóa đơn", nội dung tin nhắn văn bản và hình ảnh bạn chọn sẽ được gửi đến máy chủ của Google Gemini để xử lý.
+   
+2. **Mục đích sử dụng**:
+   - Dữ liệu chỉ được sử dụng nhằm mục đích trích xuất thông tin giao dịch (như số tiền, danh mục, ngày tháng, ghi chú) để tự động điền vào biểu mẫu giao dịch trong ứng dụng.
+   - Chúng tôi không sử dụng dữ liệu này cho bất kỳ mục đích nào khác như quảng cáo hay tiếp thị.
+
+3. **Lưu trữ và Chia sẻ**:
+   - Dữ liệu được gửi trực tiếp đến API của Google Gemini và không được lưu trữ trên máy chủ của chúng tôi.
+   - Việc xử lý dữ liệu tuân theo Chính sách Quyền riêng tư của Google.
+
+4. **Sự đồng ý của người dùng**:
+   - Tính năng AI chỉ được kích hoạt khi bạn cấp quyền rõ ràng thông qua hộp thoại đồng ý trong ứng dụng. Bạn có thể từ chối sử dụng tính năng này bất cứ lúc nào bằng cách không cấp quyền.
+
+---
